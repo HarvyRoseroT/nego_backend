@@ -23,6 +23,21 @@ const app = express();
 app.use(cors());
 app.use(morgan("dev"));
 
+app.get("/.well-known/assetlinks.json", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.status(200).json([
+    {
+      relation: ["delegate_permission/common.handle_all_urls"],
+      target: {
+        namespace: "android_app",
+        package_name: "com.nego.app",
+        sha256_cert_fingerprints: [
+          "74:FE:A0:41:BD:3B:7C:17:9E:1F:80:82:61:EA:32:98:40:13:95:16:27:61:D1:2C:C3:57:B2:87:C1:EB:3F:EA"
+        ]
+      }
+    }
+  ]);
+});
 
 app.post(
   "/api/stripe/webhook",
@@ -53,7 +68,6 @@ app.use("/api/secciones", seccionRoutes);
 app.use("/api/productos", productoRoutes);
 app.use("/planes", planRoutes);
 app.use("/dashboard/analytics", analyticsStatsRoutes);
-
 
 app.use("/api/stripe", stripeRoutes);
 app.use("/api/billing", billingRoutes);
