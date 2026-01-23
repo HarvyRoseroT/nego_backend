@@ -13,8 +13,8 @@ module.exports = {
         interval: 'month',
         duration_days: 30,
         is_active: true,
-        createdAt: now,
-        updatedAt: now,
+        created_at: now,
+        updated_at: now,
       },
       {
         name: 'Anual',
@@ -24,15 +24,15 @@ module.exports = {
         interval: 'year',
         duration_days: 365,
         is_active: true,
-        createdAt: now,
-        updatedAt: now,
+        created_at: now,
+        updated_at: now,
       },
     ];
 
     for (const plan of plans) {
       await queryInterface.sequelize.query(
         `
-        INSERT INTO "plans" (
+        INSERT INTO plans (
           name,
           price,
           stripe_price_id,
@@ -40,8 +40,8 @@ module.exports = {
           interval,
           duration_days,
           is_active,
-          "createdAt",
-          "updatedAt"
+          created_at,
+          updated_at
         )
         VALUES (
           :name,
@@ -51,8 +51,8 @@ module.exports = {
           :interval,
           :duration_days,
           :is_active,
-          :createdAt,
-          :updatedAt
+          :created_at,
+          :updated_at
         )
         ON CONFLICT (stripe_price_id)
         DO NOTHING
@@ -66,7 +66,10 @@ module.exports = {
   },
 
   async down() {
-
+    /**
+     * En producción NO se eliminan planes automáticamente.
+     * Rollback intencionalmente vacío.
+     */
     return Promise.resolve();
   },
 };
