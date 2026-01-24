@@ -1,9 +1,22 @@
 const transporter = require("../config/mailer");
 
+
+const safeSendMail = async (options) => {
+  try {
+    await transporter.sendMail(options);
+  } catch (error) {
+    console.error(
+      "SMTP ERROR:",
+      error.code || error.message || "Unknown SMTP error"
+    );
+  }
+};
+
+
 exports.sendVerificationEmail = async ({ to, token }) => {
   const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
-  await transporter.sendMail({
+  await safeSendMail({
     from: process.env.SMTP_FROM,
     to,
     subject: "Verifica tu correo electrónico",
@@ -48,7 +61,7 @@ exports.sendVerificationEmail = async ({ to, token }) => {
 exports.sendPasswordResetEmail = async ({ to, token }) => {
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-  await transporter.sendMail({
+  await safeSendMail({
     from: process.env.SMTP_FROM,
     to,
     subject: "Restablece tu contraseña",
@@ -76,7 +89,7 @@ exports.sendPasswordResetEmail = async ({ to, token }) => {
           </a>
 
           <p style="color:#6b7280; font-size:14px">
-            Este enlace expira en 30 minutos.  
+            Este enlace expira en 30 minutos.
             Si no solicitaste este cambio, puedes ignorar este correo.
           </p>
 
@@ -93,12 +106,12 @@ exports.sendPasswordResetEmail = async ({ to, token }) => {
 
 
 exports.sendPaymentSuccessEmail = async ({ to, amount, currency, invoiceUrl }) => {
-  await transporter.sendMail({
+  await safeSendMail({
     from: process.env.SMTP_FROM,
     to,
     subject: "Pago confirmado",
     html: `
-      <div style="font-family: Arial; background:#f9fafb; padding:24px">
+      <div style="font-family: Arial, sans-serif; background:#f9fafb; padding:24px">
         <div style="max-width:520px; margin:auto; background:white; border-radius:12px; padding:24px">
           <h2 style="color:#111827">Pago recibido</h2>
 
@@ -111,48 +124,62 @@ exports.sendPaymentSuccessEmail = async ({ to, amount, currency, invoiceUrl }) =
           </p>
 
           <a href="${invoiceUrl}"
-             style="display:inline-block; padding:12px 20px; background:#3fa10a; color:white; text-decoration:none; border-radius:8px;">
+             style="
+               display:inline-block;
+               padding:12px 20px;
+               background:#3fa10a;
+               color:white;
+               text-decoration:none;
+               border-radius:8px;
+               font-weight:600;
+             ">
             Ver factura
           </a>
 
           <hr style="margin:24px 0" />
-          <p style="font-size:12px; color:#9ca3af">Nego · Facturación</p>
+          <p style="font-size:12px; color:#9ca3af">
+            Nego · Facturación
+          </p>
         </div>
       </div>
-    `
+    `,
   });
 };
 
+
 exports.sendPaymentFailedEmail = async ({ to }) => {
-  await transporter.sendMail({
+  await safeSendMail({
     from: process.env.SMTP_FROM,
     to,
     subject: "Problema con tu pago",
     html: `
-      <div style="font-family: Arial; background:#f9fafb; padding:24px">
+      <div style="font-family: Arial, sans-serif; background:#f9fafb; padding:24px">
         <div style="max-width:520px; margin:auto; background:white; border-radius:12px; padding:24px">
           <h2 style="color:#b91c1c">Pago fallido</h2>
 
           <p style="color:#374151">
-            No pudimos procesar tu último pago.  
+            No pudimos procesar tu último pago.
             Te recomendamos revisar tu método de pago.
           </p>
 
           <hr style="margin:24px 0" />
-          <p style="font-size:12px; color:#9ca3af">Nego · Facturación</p>
+          <p style="font-size:12px; color:#9ca3af">
+            Nego · Facturación
+          </p>
         </div>
       </div>
-    `
+    `,
   });
 };
 
+
 exports.sendPlanChangeEmail = async ({ to, planName }) => {
-  await transporter.sendMail({
+  await safeSendMail({
     from: process.env.SMTP_FROM,
     to,
     subject: "Tu plan ha sido actualizado",
     html: `
-      <div style="font-family: Arial; background:#f9fafb; padding:24px">
+      <div style="font-family: Arial, sans-serif; background:#f9fafb; padding:24px">
         <div style="max-width:520px; margin:auto; background:white; border-radius:12px; padding:24px">
           <h2 style="color:#111827">Plan actualizado</h2>
 
@@ -160,12 +187,16 @@ exports.sendPlanChangeEmail = async ({ to, planName }) => {
             Tu suscripción ahora está activa en el plan:
           </p>
 
-          <p style="font-weight:600; margin:16px 0">${planName}</p>
+          <p style="font-weight:600; margin:16px 0">
+            ${planName}
+          </p>
 
           <hr style="margin:24px 0" />
-          <p style="font-size:12px; color:#9ca3af">Nego · Suscripciones</p>
+          <p style="font-size:12px; color:#9ca3af">
+            Nego · Suscripciones
+          </p>
         </div>
       </div>
-    `
+    `,
   });
 };
