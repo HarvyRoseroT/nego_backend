@@ -3,14 +3,33 @@ const transporter = require("../config/mailer");
 
 const safeSendMail = async (options) => {
   try {
-    await transporter.sendMail(options);
+    console.log("[MAILER] Attempting to send email", {
+      to: options.to,
+      subject: options.subject,
+    });
+
+    const info = await transporter.sendMail(options);
+
+    console.log("[MAILER] Email sent successfully", {
+      messageId: info.messageId,
+      response: info.response,
+      accepted: info.accepted,
+      rejected: info.rejected,
+    });
+
+    return info;
   } catch (error) {
-    console.error(
-      "SMTP ERROR:",
-      error.code || error.message || "Unknown SMTP error"
-    );
+    console.error("[MAILER ERROR]", {
+      code: error.code,
+      message: error.message,
+      response: error.response,
+      stack: error.stack,
+    });
+
+    throw error;
   }
 };
+
 
 
 exports.sendVerificationEmail = async ({ to, token }) => {
