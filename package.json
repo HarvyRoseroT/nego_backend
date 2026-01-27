@@ -8,7 +8,6 @@
     "db:undo": "sequelize-cli db:migrate:undo:all --env production",
     "db:migrate": "sequelize-cli db:migrate --env production",
     "db:seed": "sequelize-cli db:seed:all --env production",
-
     "db:reset": "npm run db:undo && npm run db:migrate && npm run db:seed"
   },
   "keywords": [],
@@ -17,6 +16,7 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.964.0",
+    "@aws-sdk/client-ses": "^3.975.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

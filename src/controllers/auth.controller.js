@@ -7,6 +7,7 @@ const stripe = require("../config/stripe");
 const sequelize = require("../config/database");
 const { Op } = require("sequelize");
 
+
 exports.register = async (req, res) => {
   const t = await sequelize.transaction();
 
@@ -58,20 +59,25 @@ exports.register = async (req, res) => {
 
     await t.commit();
 
-    res.status(201).json({
+    return res.status(201).json({
       message:
         "Usuario creado exitosamente. Por favor revisa tu bandeja de entrada o Spam.",
     });
   } catch (error) {
     await t.rollback();
     console.error("REGISTER ERROR:", error);
-    res.status(500).json({ message: "Register error" });
+    return res.status(500).json({ message: "Register error" });
   }
 };
+
 
 exports.verifyEmail = async (req, res) => {
   try {
     const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
 
     const record = await EmailVerificationToken.findOne({
       where: {
@@ -90,6 +96,12 @@ exports.verifyEmail = async (req, res) => {
     const user = await User.findByPk(record.user_id);
     if (!user) {
       return res.status(400).json({ message: "User not found" });
+    }
+
+    if (user.emailVerified) {
+      record.usedAt = new Date();
+      await record.save();
+      return res.json({ message: "Email verified successfully" });
     }
 
     user.emailVerified = true;
@@ -113,12 +125,13 @@ exports.verifyEmail = async (req, res) => {
     record.usedAt = new Date();
     await record.save();
 
-    res.json({ message: "Email verified successfully" });
+    return res.json({ message: "Email verified successfully" });
   } catch (error) {
     console.error("VERIFY EMAIL ERROR:", error);
-    res.status(500).json({ message: "Verification error" });
+    return res.status(500).json({ message: "Verification error" });
   }
 };
+
 
 exports.resendVerification = async (req, res) => {
   const t = await sequelize.transaction();
@@ -180,16 +193,17 @@ exports.resendVerification = async (req, res) => {
 
     await t.commit();
 
-    res.json({
+    return res.json({
       message:
         "Si el correo existe, se enviará un nuevo enlace de verificación.",
     });
   } catch (error) {
     await t.rollback();
     console.error("RESEND VERIFICATION ERROR:", error);
-    res.status(500).json({ message: "Resend verification error" });
+    return res.status(500).json({ message: "Resend verification error" });
   }
 };
+
 
 exports.login = async (req, res) => {
   try {
