@@ -120,6 +120,77 @@ exports.verifyEmail = async (req, res) => {
   }
 };
 
+exports.resendVerification = async (req, res) => {
+  const t = await sequelize.transaction();
+
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      await t.rollback();
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({
+      where: { email },
+      transaction: t,
+    });
+
+    if (!user) {
+      await t.commit();
+      return res.json({
+        message:
+          "Si el correo existe, se enviará un nuevo enlace de verificación.",
+      });
+    }
+
+    if (user.emailVerified) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ message: "Email is already verified" });
+    }
+
+    await EmailVerificationToken.update(
+      { usedAt: new Date() },
+      {
+        where: {
+          user_id: user.id,
+          usedAt: null,
+        },
+        transaction: t,
+      }
+    );
+
+    const token = generateEmailToken();
+
+    await EmailVerificationToken.create(
+      {
+        user_id: user.id,
+        token,
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      },
+      { transaction: t }
+    );
+
+    await sendVerificationEmail({
+      to: user.email,
+      token,
+    });
+
+    await t.commit();
+
+    res.json({
+      message:
+        "Si el correo existe, se enviará un nuevo enlace de verificación.",
+    });
+  } catch (error) {
+    await t.rollback();
+    console.error("RESEND VERIFICATION ERROR:", error);
+    res.status(500).json({ message: "Resend verification error" });
+  }
+};
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;

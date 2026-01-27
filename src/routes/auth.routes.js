@@ -10,6 +10,7 @@ router.post("/login", authController.login);
 router.get("/me", authMiddleware, authController.getMe);
 router.put("/update-notification-preferences", authMiddleware, authController.updateNotificationPreferences);
 router.post("/logout", authController.logout);
+router.post("/resend-verification", authController.resendVerification);
 
 router.post(
   "/request-password-reset",
