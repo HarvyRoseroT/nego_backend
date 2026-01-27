@@ -21,15 +21,18 @@ module.exports = {
       token: {
         type: Sequelize.STRING,
         allowNull: false,
+        unique: true,
       },
+
       expires_at: {
-        type: Sequelize.DATE,
+        type: Sequelize.DATE, 
         allowNull: false,
       },
       used_at: {
         type: Sequelize.DATE,
         allowNull: true,
       },
+
       createdAt: {
         type: Sequelize.DATE,
         allowNull: false,
@@ -41,6 +44,18 @@ module.exports = {
         defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
       },
     });
+
+    await queryInterface.sequelize.query(`
+      ALTER TABLE email_verification_tokens
+      ALTER COLUMN expires_at
+      TYPE TIMESTAMP WITH TIME ZONE;
+    `);
+
+    await queryInterface.sequelize.query(`
+      ALTER TABLE email_verification_tokens
+      ALTER COLUMN used_at
+      TYPE TIMESTAMP WITH TIME ZONE;
+    `);
 
     await queryInterface.addIndex("email_verification_tokens", ["token"], {
       unique: true,

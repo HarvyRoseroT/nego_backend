@@ -4,78 +4,96 @@ const { generateToken } = require("../utils/jwt");
 const { generateEmailToken } = require("../utils/emailToken");
 const { sendVerificationEmail } = require("../services/emailService");
 const stripe = require("../config/stripe");
+const sequelize = require("../config/database");
+const { Op } = require("sequelize");
 
 exports.register = async (req, res) => {
+  const t = await sequelize.transaction();
+
   try {
     const { name, email, password } = req.body;
 
-    const exists = await User.findOne({ where: { email } });
+    const exists = await User.findOne({ where: { email }, transaction: t });
     if (exists) {
+      await t.rollback();
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    const user = await User.create({
-      name,
-      email,
-      password: await hashPassword(password),
-      role: "client",
-      emailVerified: false
-    });
+    const user = await User.create(
+      {
+        name,
+        email,
+        password: await hashPassword(password),
+        role: "client",
+        emailVerified: false,
+      },
+      { transaction: t }
+    );
 
-    const trialEndDate = new Date(Date.now() + 2 * 60 * 60 * 1000);
-
-    await Subscription.create({
-      user_id: user.id,
-      status: "trial",
-      start_date: new Date(),
-      trial_end_date: trialEndDate
-    });
+    await Subscription.create(
+      {
+        user_id: user.id,
+        status: "trial",
+        start_date: new Date(),
+        trial_end_date: new Date(Date.now() + 2 * 60 * 60 * 1000),
+      },
+      { transaction: t }
+    );
 
     const token = generateEmailToken();
 
-    await EmailVerificationToken.create({
-      user_id: user.id,
-      token,
-      expiresAt: new Date(Date.now() + 30 * 60 * 1000)
-    });
+    await EmailVerificationToken.create(
+      {
+        user_id: user.id,
+        token,
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      },
+      { transaction: t }
+    );
 
     await sendVerificationEmail({
       to: user.email,
-      token
+      token,
     });
 
+    await t.commit();
+
     res.status(201).json({
-      message: "Usuario creado exitosamente. Por favor revisa tu bandeja de entrada o de Spam."
+      message:
+        "Usuario creado exitosamente. Por favor revisa tu bandeja de entrada o Spam.",
     });
   } catch (error) {
+    await t.rollback();
     console.error("REGISTER ERROR:", error);
     res.status(500).json({ message: "Register error" });
   }
 };
 
-
 exports.verifyEmail = async (req, res) => {
   try {
-    const { token } = req.query
+    const { token } = req.query;
 
     const record = await EmailVerificationToken.findOne({
       where: {
         token,
-        usedAt: null
-      }
-    })
+        usedAt: null,
+        expiresAt: {
+          [Op.gt]: new Date(),
+        },
+      },
+    });
 
-    if (!record || record.expiresAt < new Date()) {
-      return res.status(400).json({ message: "Invalid or expired token" })
+    if (!record) {
+      return res.status(400).json({ message: "Invalid or expired token" });
     }
 
-    const user = await User.findByPk(record.user_id)
+    const user = await User.findByPk(record.user_id);
     if (!user) {
-      return res.status(400).json({ message: "User not found" })
+      return res.status(400).json({ message: "User not found" });
     }
 
-    user.emailVerified = true
-    user.emailVerifiedAt = new Date()
+    user.emailVerified = true;
+    user.emailVerifiedAt = new Date();
 
     if (!user.stripe_customer_id) {
       const customer = await stripe.customers.create({
@@ -83,25 +101,24 @@ exports.verifyEmail = async (req, res) => {
         name: user.name,
         metadata: {
           userId: user.id,
-          role: user.role
-        }
-      })
+          role: user.role,
+        },
+      });
 
-      user.stripe_customer_id = customer.id
+      user.stripe_customer_id = customer.id;
     }
 
-    await user.save()
+    await user.save();
 
-    record.usedAt = new Date()
-    await record.save()
+    record.usedAt = new Date();
+    await record.save();
 
-    res.json({ message: "Email verified successfully" })
+    res.json({ message: "Email verified successfully" });
   } catch (error) {
-    console.error("VERIFY EMAIL ERROR:", error)
-    res.status(500).json({ message: "Verification error" })
+    console.error("VERIFY EMAIL ERROR:", error);
+    res.status(500).json({ message: "Verification error" });
   }
-}
-
+};
 
 exports.login = async (req, res) => {
   try {
