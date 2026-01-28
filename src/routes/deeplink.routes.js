@@ -32,12 +32,6 @@ router.get("/:slug", async (req, res) => {
           <title>${establecimiento.nombre}</title>
         </head>
         <body>
-          <script>
-            setTimeout(() => {
-              window.location.href =
-                "https://play.google.com/store/apps/details?id=com.hasaroo.nego";
-            }, 1500);
-          </script>
         </body>
       </html>
     `);
