@@ -32,7 +32,7 @@ app.get("/.well-known/assetlinks.json", (req, res) => {
       relation: ["delegate_permission/common.handle_all_urls"],
       target: {
         namespace: "android_app",
-        package_name: "com.nego.app",
+        package_name: "com.hasaroo.nego",
         sha256_cert_fingerprints: [
           "74:FE:A0:41:BD:3B:7C:17:9E:1F:80:82:61:EA:32:98:40:13:95:16:27:61:D1:2C:C3:57:B2:87:C1:EB:3F:EA"
         ]
@@ -40,6 +40,7 @@ app.get("/.well-known/assetlinks.json", (req, res) => {
     }
   ]);
 });
+
 
 app.post(
   "/api/stripe/webhook",
