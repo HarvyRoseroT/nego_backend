@@ -18,6 +18,8 @@ const billingRoutes = require("./routes/billing.routes");
 const usuarioAppRoutes = require("./routes/usuarioApp.routes");
 const analyticsRoutes = require("./routes/analytics.routes");
 
+const deepLinkRoutes = require("./routes/deeplink.routes")
+
 const app = express();
 
 app.use(cors());
@@ -74,5 +76,7 @@ app.use("/api/billing", billingRoutes);
 
 app.use("/app", usuarioAppRoutes);
 app.use("/app/analytics", analyticsRoutes);
+
+app.use("/", deepLinkRoutes);
 
 module.exports = app;
