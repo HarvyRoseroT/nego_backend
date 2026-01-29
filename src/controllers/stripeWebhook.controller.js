@@ -23,59 +23,39 @@ module.exports = async (req, res) => {
 
   try {
     switch (event.type) {
-      case "customer.subscription.updated": {
-        const stripeSub = event.data.object;
-
-        if (stripeSub.status !== "active") break;
-
-        const subscription = await Subscription.findOne({
-          where: { stripe_subscription_id: stripeSub.id }
-        });
-
-        if (!subscription || !subscription.plan_id) break;
-
-        const plan = await Plan.findByPk(subscription.plan_id);
-        if (!plan) break;
-
-        const startDate = new Date();
-        const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + plan.duration_days);
-
-        subscription.status = "active";
-        subscription.start_date = startDate;
-        subscription.end_date = endDate;
-        subscription.trial_end_date = null;
-
-        await subscription.save();
-
-        const user = await User.findOne({
-          where: { stripe_customer_id: stripeSub.customer }
-        });
-
-        if (
-          user &&
-          user.notification_preferences?.emails_cambios_plan
-        ) {
-          await sendPlanChangeEmail({
-            to: user.email,
-            planName: plan.name
-          });
-        }
-
-        break;
-      }
 
       case "invoice.payment_succeeded": {
         const invoice = event.data.object;
+
+        if (invoice.subscription) {
+          const subscription = await Subscription.findOne({
+            where: { stripe_subscription_id: invoice.subscription }
+          });
+
+          if (subscription) {
+            const plan = await Plan.findByPk(subscription.plan_id);
+
+            const startDate = new Date();
+            const endDate = new Date(startDate);
+
+            if (plan?.duration_days) {
+              endDate.setDate(startDate.getDate() + plan.duration_days);
+            }
+
+            subscription.status = "active";
+            subscription.start_date = startDate;
+            subscription.end_date = endDate;
+            subscription.trial_end_date = null;
+
+            await subscription.save();
+          }
+        }
 
         const user = await User.findOne({
           where: { stripe_customer_id: invoice.customer }
         });
 
-        if (
-          user &&
-          user.notification_preferences?.emails_pagos
-        ) {
+        if (user && user.notification_preferences?.emails_pagos) {
           await sendPaymentSuccessEmail({
             to: user.email,
             amount: (invoice.amount_paid / 100).toLocaleString("es-CO"),
@@ -86,6 +66,7 @@ module.exports = async (req, res) => {
 
         break;
       }
+
 
       case "invoice.payment_failed": {
         const invoice = event.data.object;
