@@ -22,7 +22,16 @@ const deepLinkRoutes = require("./routes/deeplink.routes")
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "https://panel.nego.ink",
+      "http://localhost:3000",
+    ],
+    credentials: true,
+  })
+);
+
 app.use(morgan("dev"));
 
 app.get("/.well-known/assetlinks.json", (req, res) => {
