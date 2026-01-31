@@ -34,7 +34,7 @@ app.use(
 
 app.use(morgan("dev"));
 
-app.use("/api/stripe", stripeWebhook);
+app.use("/api/stripe/webhook", stripeWebhook);
 
 
 app.get("/.well-known/assetlinks.json", (req, res) => {
