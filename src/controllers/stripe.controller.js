@@ -6,64 +6,57 @@ exports.createSubscription = async (req, res) => {
     const { planId } = req.body;
     const user = req.user;
 
-
     if (!user) {
-      console.log("ERROR: USER NOT PRESENT (AUTH)");
       return res.status(400).json({ message: "User not authenticated" });
     }
 
     if (!user.stripe_customer_id) {
-      console.log("ERROR: STRIPE CUSTOMER ID MISSING");
       return res.status(400).json({ message: "Stripe customer not found" });
     }
 
     const plan = await Plan.findByPk(planId);
-
 
     if (!plan) {
       return res.status(400).json({ message: "Plan not found" });
     }
 
     if (!plan.stripe_price_id) {
-      return res.status(400).json({ message: "Invalid plan (no stripe price)" });
+      return res.status(400).json({ message: "Invalid plan" });
     }
 
     const subscription = await Subscription.findOne({
       where: { user_id: user.id }
     });
 
-
-
     if (!subscription) {
       return res.status(400).json({ message: "Subscription not found" });
     }
 
-    const stripeSubscription = await stripe.subscriptions.create({
+    await subscription.update({
+      plan_id: plan.id,
+      status: "pending"
+    });
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
       customer: user.stripe_customer_id,
-      items: [{ price: plan.stripe_price_id }],
-      payment_behavior: "default_incomplete",
-      payment_settings: {
-        save_default_payment_method: "on_subscription"
-      },
-      expand: ["latest_invoice.payment_intent"]
+      line_items: [
+        {
+          price: plan.stripe_price_id,
+          quantity: 1
+        }
+      ],
+      success_url: `${process.env.FRONTEND_URL}/billing/success`,
+      cancel_url: `${process.env.FRONTEND_URL}/billing/cancel`,
+      metadata: {
+        user_id: user.id,
+        plan_id: plan.id
+      }
     });
 
-
-    subscription.plan_id = plan.id;
-    subscription.stripe_subscription_id = stripeSubscription.id;
-    subscription.status = "pending";
-    subscription.start_date = new Date();
-    subscription.trial_end_date = null;
-
-    await subscription.save();
-
-
-    return res.json({
-      clientSecret:
-        stripeSubscription.latest_invoice.payment_intent.client_secret
-    });
+    return res.json({ url: session.url });
   } catch (error) {
-    console.error("CREATE SUBSCRIPTION FATAL ERROR:", error);
+    console.error("CREATE SUBSCRIPTION ERROR:", error);
     return res.status(500).json({ message: "Subscription error" });
   }
 };
