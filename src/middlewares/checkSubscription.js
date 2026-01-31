@@ -1,4 +1,6 @@
-const { Subscription, Establecimiento } = require("../models");
+const { Subscription } = require("../models");
+
+const GRACE_PERIOD_DAYS = 5;
 
 module.exports = async (req, res, next) => {
   try {
@@ -14,29 +16,30 @@ module.exports = async (req, res, next) => {
 
     const now = new Date();
 
-    if (subscription.status === "trial") {
-      if (subscription.trial_end_date && now <= subscription.trial_end_date) {
-        return next();
-      }
+    if (
+      subscription.status === "trial" &&
+      subscription.trial_end_date &&
+      now <= subscription.trial_end_date
+    ) {
+      return next();
     }
 
     if (subscription.status === "active") {
-      if (subscription.end_date && now <= subscription.end_date) {
+      return next();
+    }
+
+    if (subscription.status === "past_due") {
+      const graceLimit = new Date(subscription.updatedAt);
+      graceLimit.setDate(graceLimit.getDate() + GRACE_PERIOD_DAYS);
+
+      if (now <= graceLimit) {
         return next();
       }
     }
 
-    if (subscription.status !== "expired") {
-      await subscription.update({ status: "expired" });
-
-      await Establecimiento.update(
-        { activo: false },
-        { where: { user_id: userId } }
-      );
-    }
-
     return res.status(402).json({
-      message: "Subscription expired"
+      message: "Subscription inactive",
+      status: subscription.status
     });
   } catch (error) {
     console.error("SUBSCRIPTION MIDDLEWARE ERROR:", error);

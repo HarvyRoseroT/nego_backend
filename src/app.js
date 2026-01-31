@@ -12,7 +12,7 @@ const productoRoutes = require("./routes/producto.routes");
 const planRoutes = require("./routes/plan.routes");
 const analyticsStatsRoutes = require("./routes/analytics.stats.routes");
 const stripeRoutes = require("./routes/stripe.routes");
-const stripeWebhook = require("./controllers/stripeWebhook.controller");
+const stripeWebhook = require("./routes/stripeWebhook.routes");
 const billingRoutes = require("./routes/billing.routes");
 
 const usuarioAppRoutes = require("./routes/usuarioApp.routes");
@@ -26,13 +26,16 @@ app.use(
   cors({
     origin: [
       "https://panel.nego.ink",
-      "http://localhost:3000",
+      "http://localhost:3001",
     ],
     credentials: true,
   })
 );
 
 app.use(morgan("dev"));
+
+app.use("/api/stripe", stripeWebhook);
+
 
 app.get("/.well-known/assetlinks.json", (req, res) => {
   res.setHeader("Content-Type", "application/json");
@@ -54,11 +57,6 @@ app.get("/.well-known/assetlinks.json", (req, res) => {
 });
 
 
-app.post(
-  "/api/stripe/webhook",
-  express.raw({ type: "application/json" }),
-  stripeWebhook
-);
 
 app.use(express.json());
 
