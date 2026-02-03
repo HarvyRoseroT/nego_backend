@@ -274,7 +274,14 @@ exports.getMe = async (req, res) => {
     const userId = req.user.id;
 
     const user = await User.findByPk(userId, {
-      attributes: ["id", "name", "email", "role", "stripe_customer_id", "notification_preferences"],
+      attributes: [
+        "id",
+        "name",
+        "email",
+        "role",
+        "stripe_customer_id",
+        "notification_preferences",
+      ],
       include: [
         {
           model: Subscription,
@@ -284,6 +291,7 @@ exports.getMe = async (req, res) => {
             "start_date",
             "trial_end_date",
             "end_date",
+            "stripe_subscription_id",
           ],
           include: [
             {
@@ -299,25 +307,52 @@ exports.getMe = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const subscription = user.Subscription
-      ? {
-          id: user.Subscription.id,
-          status: user.Subscription.status,
+    let subscription = null;
 
-          ends_at:
-            user.Subscription.trial_end_date ||
-            user.Subscription.end_date ||
-            null,
+    if (user.Subscription) {
+      let current_period_end = null;
+      let cancel_at_period_end = false;
 
-          Plan: user.Subscription.Plan
-            ? {
-                id: user.Subscription.Plan.id,
-                name: user.Subscription.Plan.name,
-                price: user.Subscription.Plan.price,
-              }
-            : null,
+      if (user.Subscription.stripe_subscription_id) {
+        try {
+          const stripeSub = await stripe.subscriptions.retrieve(
+            user.Subscription.stripe_subscription_id
+          );
+
+          current_period_end = new Date(
+            stripeSub.current_period_end * 1000
+          );
+
+          cancel_at_period_end = stripeSub.cancel_at_period_end;
+        } catch (err) {
+          console.error(
+            "Stripe subscription fetch failed:",
+            err.message
+          );
         }
-      : null;
+      }
+
+      subscription = {
+        id: user.Subscription.id,
+        status: user.Subscription.status,
+
+        ends_at:
+          user.Subscription.trial_end_date ||
+          user.Subscription.end_date ||
+          null,
+
+        current_period_end,
+        cancel_at_period_end,
+
+        Plan: user.Subscription.Plan
+          ? {
+              id: user.Subscription.Plan.id,
+              name: user.Subscription.Plan.name,
+              price: user.Subscription.Plan.price,
+            }
+          : null,
+      };
+    }
 
     res.json({
       id: user.id,

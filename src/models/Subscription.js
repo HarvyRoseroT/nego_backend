@@ -47,7 +47,13 @@ Subscription.init(
     trial_end_date: {
       type: DataTypes.DATE,
       allowNull: true
+    },
+    last_paid_invoice_id: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true
     }
+
   },
   {
     sequelize,

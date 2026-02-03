@@ -66,6 +66,12 @@ module.exports = {
         allowNull: true
       },
 
+      last_paid_invoice_id: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        unique: true
+      },
+
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,

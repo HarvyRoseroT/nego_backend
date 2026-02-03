@@ -1,11 +1,16 @@
 const stripe = require("../config/stripe");
-const { Subscription } = require("../models");
+const { Subscription, User, Plan } = require("../models");
+const {
+  sendPaymentSuccessEmail,
+  sendPaymentFailedEmail,
+  sendRenewalEmail,
+  sendCancellationEmail,
+  sendCancellationScheduledEmail,
+} = require("../services/emailService");
 
 module.exports = async (req, res) => {
   const signature = req.headers["stripe-signature"];
   let event;
-
-  console.log("🔔 Webhook recibido");
 
   try {
     event = stripe.webhooks.constructEvent(
@@ -14,81 +19,82 @@ module.exports = async (req, res) => {
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.error("❌ Error verificando firma:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
-
-  console.log("📌 Evento:", event.type);
 
   try {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object;
 
-        console.log("✅ checkout.session.completed");
-        console.log("   session.id:", session.id);
-        console.log("   session.subscription:", session.subscription);
-        console.log("   metadata:", session.metadata);
-
         if (!session.subscription || !session.metadata?.user_id) break;
 
         await Subscription.update(
           {
             stripe_subscription_id: session.subscription,
-            status: "pending"
+            status: "pending",
           },
           {
-            where: {
-              user_id: session.metadata.user_id
-            }
+            where: { user_id: session.metadata.user_id },
           }
         );
-
-        console.log("🟡 stripe_subscription_id guardado");
         break;
       }
 
       case "invoice.paid": {
-        let invoice = event.data.object;
-
-        console.log("💰 invoice.paid");
-        console.log("   invoice.id:", invoice.id);
+        const invoice = event.data.object;
 
         let stripeSubscriptionId =
           invoice.subscription ||
           invoice.lines?.data?.[0]?.subscription;
 
-        // 🔁 fallback oficial recomendado por Stripe
         if (!stripeSubscriptionId) {
-          console.log("🔁 Recuperando invoice desde Stripe...");
           const fullInvoice = await stripe.invoices.retrieve(invoice.id, {
-            expand: ["subscription"]
+            expand: ["subscription"],
           });
           stripeSubscriptionId = fullInvoice.subscription?.id;
         }
 
-        console.log("   stripeSubscriptionId:", stripeSubscriptionId);
+        if (!stripeSubscriptionId) break;
 
-        if (!stripeSubscriptionId) {
-          console.error("❌ No se pudo obtener stripe_subscription_id");
-          break;
+        const subscription = await Subscription.findOne({
+          where: { stripe_subscription_id: stripeSubscriptionId },
+          include: [{ model: User }],
+        });
+
+        if (!subscription) break;
+        if (subscription.last_paid_invoice_id === invoice.id) break;
+
+        const isFirstPayment =
+          invoice.billing_reason === "subscription_create";
+
+        subscription.status = "active";
+        subscription.last_paid_invoice_id = invoice.id;
+
+        if (isFirstPayment) {
+          subscription.start_date = new Date();
+          subscription.trial_end_date = null;
+          subscription.end_date = null;
         }
 
-        const updated = await Subscription.update(
-          {
-            status: "active",
-            start_date: new Date(),
-            trial_end_date: null,
-            end_date: null
-          },
-          {
-            where: {
-              stripe_subscription_id: stripeSubscriptionId
-            }
-          }
-        );
+        await subscription.save();
 
-        console.log("🟢 Subscription activada:", updated);
+        if (isFirstPayment) {
+          await sendPaymentSuccessEmail({
+            to: subscription.User.email,
+            amount: (invoice.amount_paid / 100).toFixed(2),
+            currency: invoice.currency.toUpperCase(),
+            invoiceUrl: invoice.hosted_invoice_url,
+          });
+        } else {
+          await sendRenewalEmail({
+            to: subscription.User.email,
+            amount: (invoice.amount_paid / 100).toFixed(2),
+            currency: invoice.currency.toUpperCase(),
+            invoiceUrl: invoice.hosted_invoice_url,
+          });
+        }
+
         break;
       }
 
@@ -101,42 +107,91 @@ module.exports = async (req, res) => {
 
         if (!stripeSubscriptionId) break;
 
-        await Subscription.update(
-          { status: "past_due" },
-          { where: { stripe_subscription_id: stripeSubscriptionId } }
-        );
+        const subscription = await Subscription.findOne({
+          where: { stripe_subscription_id: stripeSubscriptionId },
+          include: [{ model: User }],
+        });
 
-        console.log("🟠 Subscription marcada como past_due");
+        if (!subscription) break;
+
+        subscription.status = "past_due";
+        await subscription.save();
+
+        await sendPaymentFailedEmail({
+          to: subscription.User.email,
+        });
+
+        break;
+      }
+
+      case "customer.subscription.updated": {
+        const stripeSub = event.data.object;
+
+        const priceId =
+          stripeSub.items?.data?.[0]?.price?.id;
+
+        if (priceId) {
+          const plan = await Plan.findOne({
+            where: { stripe_price_id: priceId },
+          });
+
+          if (plan) {
+            await Subscription.update(
+              { plan_id: plan.id },
+              { where: { stripe_subscription_id: stripeSub.id } }
+            );
+          }
+        }
+
+        if (stripeSub.cancel_at_period_end) {
+          const subscription = await Subscription.findOne({
+            where: { stripe_subscription_id: stripeSub.id },
+            include: [{ model: User }],
+          });
+
+          if (!subscription) break;
+
+          subscription.end_date = new Date(
+            stripeSub.current_period_end * 1000
+          );
+          await subscription.save();
+
+          await sendCancellationScheduledEmail({
+            to: subscription.User.email,
+            endDate: subscription.end_date,
+          });
+        }
+
         break;
       }
 
       case "customer.subscription.deleted": {
         const stripeSub = event.data.object;
 
-        console.log("🗑️ customer.subscription.deleted");
-        console.log("   stripe_subscription_id:", stripeSub.id);
+        const subscription = await Subscription.findOne({
+          where: { stripe_subscription_id: stripeSub.id },
+          include: [{ model: User }],
+        });
 
-        await Subscription.update(
-          {
-            status: "canceled",
-            end_date: new Date()
-          },
-          { where: { stripe_subscription_id: stripeSub.id } }
-        );
+        if (!subscription) break;
 
-        console.log("🔴 Subscription cancelada");
+        subscription.status = "canceled";
+        subscription.end_date = new Date();
+        await subscription.save();
+
+        await sendCancellationEmail({
+          to: subscription.User.email,
+        });
+
         break;
       }
 
       default:
-        console.log("ℹ️ Evento ignorado:", event.type);
         break;
     }
 
     res.json({ received: true });
   } catch (error) {
-    console.error("🔥 ERROR EN WEBHOOK:");
-    console.error(error);
     res.status(500).send("Webhook handler failed");
   }
 };
