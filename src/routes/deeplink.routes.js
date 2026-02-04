@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 const { Establecimiento } = require("../models");
 
-const PLAY_STORE_URL =
-  "https://play.google.com/store/apps/details?id=com.hasaroo.nego";
+const PLAY_STORE_URL = process.env.PLAY_STORE_URL;
+const LANDING_BASE_URL = process.env.LANDING_BASE_URL 
 
 router.get("/:slug", async (req, res) => {
   const { slug } = req.params;
@@ -33,7 +33,7 @@ router.get("/:slug", async (req, res) => {
     }
 
     // 🔹 iOS / Desktop / crawlers → redirección limpia
-    return res.redirect(302, PLAY_STORE_URL);
+    return res.redirect(302, LANDING_BASE_URL + "/" + slug);
 
   } catch (err) {
     console.error("DEEPLINK ERROR:", err);
