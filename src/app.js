@@ -27,6 +27,7 @@ app.use(
     origin: [
       "https://panel.nego.ink",
       "http://localhost:3001",
+      "https://open.nego.ink",
     ],
     credentials: true,
   })
