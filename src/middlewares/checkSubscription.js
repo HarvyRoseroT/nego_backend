@@ -19,6 +19,16 @@ module.exports = async (req, res, next) => {
     if (
       subscription.status === "trial" &&
       subscription.trial_end_date &&
+      now > subscription.trial_end_date
+    ) {
+      subscription.status = "expired";
+      subscription.end_date = now;
+      await subscription.save();
+    }
+
+    if (
+      subscription.status === "trial" &&
+      subscription.trial_end_date &&
       now <= subscription.trial_end_date
     ) {
       return next();
@@ -42,7 +52,6 @@ module.exports = async (req, res, next) => {
       status: subscription.status
     });
   } catch (error) {
-    console.error("SUBSCRIPTION MIDDLEWARE ERROR:", error);
     res.status(500).json({ message: "Subscription validation error" });
   }
 };
