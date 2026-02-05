@@ -56,11 +56,30 @@ exports.getById = async (req, res) => {
       include: [
         {
           model: Establecimiento,
-          as: "establecimiento", 
+          as: "establecimiento",
           required: true,
           where: { user_id: req.user.id },
           attributes: [],
         },
+        {
+          model: Seccion,
+          as: "secciones",
+          include: [
+            {
+              model: Producto,
+              as: "productos",
+            },
+          ],
+        },
+      ],
+      order: [
+        [{ model: Seccion, as: "secciones" }, "orden", "ASC"],
+        [
+          { model: Seccion, as: "secciones" },
+          { model: Producto, as: "productos" },
+          "orden",
+          "ASC",
+        ],
       ],
     });
 
@@ -73,10 +92,11 @@ exports.getById = async (req, res) => {
     console.error("GET CARTA BY ID ERROR:", error);
     res.status(500).json({
       message: "Get carta error",
-      error: error.message, 
+      error: error.message,
     });
   }
 };
+
 
 exports.update = async (req, res) => {
   try {
