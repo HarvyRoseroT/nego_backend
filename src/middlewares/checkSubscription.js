@@ -1,4 +1,4 @@
-const { Subscription } = require("../models");
+const { Subscription, Establecimiento } = require("../models");
 
 const GRACE_PERIOD_DAYS = 5;
 
@@ -11,6 +11,7 @@ module.exports = async (req, res, next) => {
     });
 
     if (!subscription) {
+      await disableEstablecimientos(userId);
       return res.status(403).json({ message: "No subscription found" });
     }
 
@@ -24,6 +25,11 @@ module.exports = async (req, res, next) => {
       subscription.status = "expired";
       subscription.end_date = now;
       await subscription.save();
+      await disableEstablecimientos(userId);
+      return res.status(402).json({
+        message: "Trial expired",
+        status: "expired"
+      });
     }
 
     if (
@@ -31,10 +37,12 @@ module.exports = async (req, res, next) => {
       subscription.trial_end_date &&
       now <= subscription.trial_end_date
     ) {
+      await enableEstablecimientos(userId);
       return next();
     }
 
     if (subscription.status === "active") {
+      await enableEstablecimientos(userId);
       return next();
     }
 
@@ -43,15 +51,34 @@ module.exports = async (req, res, next) => {
       graceLimit.setDate(graceLimit.getDate() + GRACE_PERIOD_DAYS);
 
       if (now <= graceLimit) {
+        await enableEstablecimientos(userId);
         return next();
       }
     }
+
+    await disableEstablecimientos(userId);
 
     return res.status(402).json({
       message: "Subscription inactive",
       status: subscription.status
     });
   } catch (error) {
-    res.status(500).json({ message: "Subscription validation error" });
+    return res.status(500).json({
+      message: "Subscription validation error"
+    });
   }
 };
+
+async function disableEstablecimientos(userId) {
+  await Establecimiento.update(
+    { activo: false },
+    { where: { user_id: userId } }
+  );
+}
+
+async function enableEstablecimientos(userId) {
+  await Establecimiento.update(
+    { activo: true },
+    { where: { user_id: userId } }
+  );
+}
