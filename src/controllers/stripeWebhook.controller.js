@@ -124,51 +124,65 @@ module.exports = async (req, res) => {
         break;
       }
 
-      case "customer.subscription.updated": {
-        const stripeSub = event.data.object;
+case "customer.subscription.updated": {
+  const stripeSub = event.data.object;
 
-        const subscription = await Subscription.findOne({
-          where: { stripe_subscription_id: stripeSub.id },
-          include: [{ model: User }],
-        });
+  // 👉 AQUÍ va el console.log (debug temporal)
+  console.log(
+    "🧾 subscription.updated items:",
+    stripeSub.items.data.map(item => ({
+      subscription_item_id: item.id,
+      price_id: item.price.id,
+      interval: item.price.recurring?.interval,
+      amount: item.price.unit_amount,
+    }))
+  );
 
-        if (!subscription) break;
+  let subscription = await Subscription.findOne({
+    where: { stripe_subscription_id: stripeSub.id },
+  });
 
-        const priceId = stripeSub.items?.data?.[0]?.price?.id;
+  const activeItem = stripeSub.items.data.find(
+    item => item.price?.recurring?.interval
+  );
 
-        if (priceId) {
-          const plan = await Plan.findOne({
-            where: { stripe_price_id: priceId },
-          });
+  const priceId = activeItem?.price?.id;
 
-          if (plan && subscription.plan_id !== plan.id) {
-            subscription.plan_id = plan.id;
-          }
-        }
+  if (!priceId) break;
 
-        subscription.status = stripeSub.status === "active"
-          ? "active"
-          : subscription.status;
+  const plan = await Plan.findOne({
+    where: { stripe_price_id: priceId },
+  });
 
-        subscription.start_date = new Date(
-          stripeSub.current_period_start * 1000
-        );
+  if (!plan) {
+    console.log("❌ Plan no encontrado para price:", priceId);
+    break;
+  }
 
-        subscription.end_date = stripeSub.cancel_at_period_end
-          ? new Date(stripeSub.current_period_end * 1000)
-          : null;
+  if (!subscription) {
+    subscription = await Subscription.create({
+      stripe_subscription_id: stripeSub.id,
+      plan_id: plan.id,
+      status: stripeSub.status,
+      start_date: new Date(stripeSub.current_period_start * 1000),
+    });
+  } else if (subscription.plan_id !== plan.id) {
+    subscription.plan_id = plan.id;
+  }
 
-        await subscription.save();
+  subscription.status = stripeSub.status;
+  subscription.start_date = new Date(
+    stripeSub.current_period_start * 1000
+  );
+  subscription.end_date = stripeSub.cancel_at_period_end
+    ? new Date(stripeSub.current_period_end * 1000)
+    : null;
 
-        if (stripeSub.cancel_at_period_end) {
-          await sendCancellationScheduledEmail({
-            to: subscription.User.email,
-            endDate: subscription.end_date,
-          });
-        }
+  await subscription.save();
 
-        break;
-      }
+  break;
+}
+
 
 
       case "customer.subscription.deleted": {

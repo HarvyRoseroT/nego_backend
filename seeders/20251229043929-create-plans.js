@@ -7,7 +7,7 @@ module.exports = {
     const plans = [
       {
         name: 'Mensual',
-        price: 29900,
+        price: 2990000, 
         stripe_price_id: 'price_1SqnG6DZkz7sozFUZLQy9XZU',
         currency: 'COP',
         interval: 'month',
@@ -16,17 +16,7 @@ module.exports = {
         created_at: now,
         updated_at: now,
       },
-      {
-        name: 'Anual',
-        price: 299900,
-        stripe_price_id: 'price_1SqnG6DZkz7sozFUBiPhrJvB',
-        currency: 'COP',
-        interval: 'year',
-        duration_days: 365,
-        is_active: true,
-        created_at: now,
-        updated_at: now,
-      },
+      
     ];
 
     for (const plan of plans) {
@@ -55,7 +45,9 @@ module.exports = {
           :updated_at
         )
         ON CONFLICT (stripe_price_id)
-        DO NOTHING
+        DO UPDATE SET
+          price = EXCLUDED.price,
+          updated_at = EXCLUDED.updated_at
         `,
         {
           replacements: plan,
@@ -66,10 +58,6 @@ module.exports = {
   },
 
   async down() {
-    /**
-     * En producción NO se eliminan planes automáticamente.
-     * Rollback intencionalmente vacío.
-     */
     return Promise.resolve();
   },
 };
