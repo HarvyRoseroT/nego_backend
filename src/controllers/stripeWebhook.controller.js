@@ -127,35 +127,40 @@ module.exports = async (req, res) => {
       case "customer.subscription.updated": {
         const stripeSub = event.data.object;
 
-        const priceId =
-          stripeSub.items?.data?.[0]?.price?.id;
+        const subscription = await Subscription.findOne({
+          where: { stripe_subscription_id: stripeSub.id },
+          include: [{ model: User }],
+        });
+
+        if (!subscription) break;
+
+        const priceId = stripeSub.items?.data?.[0]?.price?.id;
 
         if (priceId) {
           const plan = await Plan.findOne({
             where: { stripe_price_id: priceId },
           });
 
-          if (plan) {
-            await Subscription.update(
-              { plan_id: plan.id },
-              { where: { stripe_subscription_id: stripeSub.id } }
-            );
+          if (plan && subscription.plan_id !== plan.id) {
+            subscription.plan_id = plan.id;
           }
         }
 
+        subscription.status = stripeSub.status === "active"
+          ? "active"
+          : subscription.status;
+
+        subscription.start_date = new Date(
+          stripeSub.current_period_start * 1000
+        );
+
+        subscription.end_date = stripeSub.cancel_at_period_end
+          ? new Date(stripeSub.current_period_end * 1000)
+          : null;
+
+        await subscription.save();
+
         if (stripeSub.cancel_at_period_end) {
-          const subscription = await Subscription.findOne({
-            where: { stripe_subscription_id: stripeSub.id },
-            include: [{ model: User }],
-          });
-
-          if (!subscription) break;
-
-          subscription.end_date = new Date(
-            stripeSub.current_period_end * 1000
-          );
-          await subscription.save();
-
           await sendCancellationScheduledEmail({
             to: subscription.User.email,
             endDate: subscription.end_date,
@@ -164,6 +169,7 @@ module.exports = async (req, res) => {
 
         break;
       }
+
 
       case "customer.subscription.deleted": {
         const stripeSub = event.data.object;
