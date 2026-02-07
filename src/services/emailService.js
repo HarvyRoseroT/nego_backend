@@ -1,4 +1,4 @@
-const sendEmail = require("../config/sesMailer");
+const sendEmail = require("../config/resendMailer");
 
 exports.sendVerificationEmail = async ({ to, token }) => {
   const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
