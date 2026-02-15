@@ -11,14 +11,13 @@ const seccionRoutes = require("./routes/seccion.routes");
 const productoRoutes = require("./routes/producto.routes");
 const planRoutes = require("./routes/plan.routes");
 const analyticsStatsRoutes = require("./routes/analytics.stats.routes");
-const stripeRoutes = require("./routes/stripe.routes");
-const stripeWebhook = require("./routes/stripeWebhook.routes");
 const billingRoutes = require("./routes/billing.routes");
 
 const usuarioAppRoutes = require("./routes/usuarioApp.routes");
 const analyticsRoutes = require("./routes/analytics.routes");
+const deepLinkRoutes = require("./routes/deeplink.routes");
 
-const deepLinkRoutes = require("./routes/deeplink.routes")
+const wompiWebhook = require("./routes/webhook.routes");
 
 const app = express();
 
@@ -35,29 +34,12 @@ app.use(
 
 app.use(morgan("dev"));
 
-app.use("/api/stripe/webhook", stripeWebhook);
+app.use(
+  "/api/webhooks/wompi",
+  express.raw({ type: "application/json" })
+);
 
-
-app.get("/.well-known/assetlinks.json", (req, res) => {
-  res.setHeader("Content-Type", "application/json");
-  res.status(200).json([
-    {
-      relation: [
-        "delegate_permission/common.handle_all_urls",
-        "delegate_permission/common.get_login_creds"
-      ],
-      target: {
-        namespace: "android_app",
-        package_name: "com.hasaroo.nego",
-        sha256_cert_fingerprints: [
-          "74:FE:A0:41:BD:3B:7C:17:9E:1F:80:82:61:EA:32:98:40:13:95:16:27:61:D1:2C:C3:57:B2:87:C1:EB:3F:EA"
-        ]
-      }
-    }
-  ]);
-});
-
-
+app.use("/api/webhooks/wompi", wompiWebhook);
 
 app.use(express.json());
 
@@ -83,7 +65,6 @@ app.use("/api/productos", productoRoutes);
 app.use("/planes", planRoutes);
 app.use("/dashboard/analytics", analyticsStatsRoutes);
 
-app.use("/api/stripe", stripeRoutes);
 app.use("/api/billing", billingRoutes);
 
 app.use("/app", usuarioAppRoutes);

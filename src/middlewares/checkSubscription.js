@@ -7,46 +7,52 @@ module.exports = async (req, res, next) => {
     const userId = req.user.id;
 
     const subscription = await Subscription.findOne({
-      where: { user_id: userId }
+      where: { user_id: userId },
     });
 
     if (!subscription) {
       await disableEstablecimientos(userId);
-      return res.status(403).json({ message: "No subscription found" });
+      return res.status(403).json({
+        message: "No subscription found",
+      });
     }
 
     const now = new Date();
 
-    if (
-      subscription.status === "trial" &&
-      subscription.trial_end_date &&
-      now > subscription.trial_end_date
-    ) {
-      subscription.status = "expired";
-      subscription.end_date = now;
-      await subscription.save();
-      await disableEstablecimientos(userId);
-      return res.status(402).json({
-        message: "Trial expired",
-        status: "expired"
-      });
-    }
+    if (subscription.status === "TRIAL") {
+      if (subscription.current_period_end && now > subscription.current_period_end) {
+        subscription.status = "EXPIRED";
+        await subscription.save();
+        await disableEstablecimientos(userId);
+        return res.status(402).json({
+          message: "Trial expired",
+          status: "EXPIRED",
+        });
+      }
 
-    if (
-      subscription.status === "trial" &&
-      subscription.trial_end_date &&
-      now <= subscription.trial_end_date
-    ) {
       await enableEstablecimientos(userId);
       return next();
     }
 
-    if (subscription.status === "active") {
+    if (subscription.status === "ACTIVE") {
+      if (
+        subscription.current_period_end &&
+        now > subscription.current_period_end
+      ) {
+        subscription.status = "EXPIRED";
+        await subscription.save();
+        await disableEstablecimientos(userId);
+        return res.status(402).json({
+          message: "Subscription expired",
+          status: "EXPIRED",
+        });
+      }
+
       await enableEstablecimientos(userId);
       return next();
     }
 
-    if (subscription.status === "past_due") {
+    if (subscription.status === "PAST_DUE") {
       const graceLimit = new Date(subscription.updatedAt);
       graceLimit.setDate(graceLimit.getDate() + GRACE_PERIOD_DAYS);
 
@@ -54,17 +60,27 @@ module.exports = async (req, res, next) => {
         await enableEstablecimientos(userId);
         return next();
       }
+
+      subscription.status = "FAILED";
+      await subscription.save();
+      await disableEstablecimientos(userId);
+
+      return res.status(402).json({
+        message: "Payment grace period expired",
+        status: "FAILED",
+      });
     }
 
     await disableEstablecimientos(userId);
 
     return res.status(402).json({
       message: "Subscription inactive",
-      status: subscription.status
+      status: subscription.status,
     });
+
   } catch (error) {
     return res.status(500).json({
-      message: "Subscription validation error"
+      message: "Subscription validation error",
     });
   }
 };

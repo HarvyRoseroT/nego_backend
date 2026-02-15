@@ -7,7 +7,6 @@ const stripe = require("../config/stripe");
 const sequelize = require("../config/database");
 const { Op } = require("sequelize");
 
-
 exports.register = async (req, res) => {
   const t = await sequelize.transaction();
 
@@ -20,6 +19,9 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Email already registered" });
     }
 
+    const now = new Date();
+    const trialEnd = new Date(Date.now() + 2 * 60 * 60 * 1000);
+
     const user = await User.create(
       {
         name,
@@ -27,6 +29,7 @@ exports.register = async (req, res) => {
         password: await hashPassword(password),
         role: "client",
         emailVerified: false,
+        trial_ends_at: trialEnd,
       },
       { transaction: t }
     );
@@ -34,9 +37,14 @@ exports.register = async (req, res) => {
     await Subscription.create(
       {
         user_id: user.id,
-        status: "trial",
-        start_date: new Date(),
-        trial_end_date: new Date(Date.now() + 2 * 60 * 60 * 1000),
+        payment_method_id: null,
+        status: "TRIAL",
+        plan_price: 0,
+        currency: "COP",
+        current_period_start: now,
+        current_period_end: trialEnd,
+        next_billing_date: trialEnd,
+        retry_count: 0,
       },
       { transaction: t }
     );
@@ -69,6 +77,7 @@ exports.register = async (req, res) => {
     return res.status(500).json({ message: "Register error" });
   }
 };
+
 
 
 exports.verifyEmail = async (req, res) => {
@@ -217,15 +226,12 @@ exports.login = async (req, res) => {
           attributes: [
             "id",
             "status",
-            "start_date",
-            "trial_end_date",
-            "end_date",
-          ],
-          include: [
-            {
-              model: Plan,
-              attributes: ["id", "name", "price"],
-            },
+            "plan_price",
+            "currency",
+            "current_period_start",
+            "current_period_end",
+            "next_billing_date",
+            "retry_count",
           ],
         },
       ],
@@ -269,6 +275,7 @@ exports.login = async (req, res) => {
   }
 };
 
+
 exports.getMe = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -279,7 +286,6 @@ exports.getMe = async (req, res) => {
         "name",
         "email",
         "role",
-        "stripe_customer_id",
         "notification_preferences",
       ],
       include: [
@@ -288,16 +294,13 @@ exports.getMe = async (req, res) => {
           attributes: [
             "id",
             "status",
-            "start_date",
-            "trial_end_date",
-            "end_date",
-            "stripe_subscription_id",
-          ],
-          include: [
-            {
-              model: Plan,
-              attributes: ["id", "name", "price"],
-            },
+            "plan_price",
+            "currency",
+            "current_period_start",
+            "current_period_end",
+            "next_billing_date",
+            "retry_count",
+            "cancel_at_period_end"
           ],
         },
       ],
@@ -307,60 +310,12 @@ exports.getMe = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    let subscription = null;
-
-    if (user.Subscription) {
-      let current_period_end = null;
-      let cancel_at_period_end = false;
-
-      if (user.Subscription.stripe_subscription_id) {
-        try {
-          const stripeSub = await stripe.subscriptions.retrieve(
-            user.Subscription.stripe_subscription_id
-          );
-
-          current_period_end = new Date(
-            stripeSub.current_period_end * 1000
-          );
-
-          cancel_at_period_end = stripeSub.cancel_at_period_end;
-        } catch (err) {
-          console.error(
-            "Stripe subscription fetch failed:",
-            err.message
-          );
-        }
-      }
-
-      subscription = {
-        id: user.Subscription.id,
-        status: user.Subscription.status,
-
-        ends_at:
-          user.Subscription.trial_end_date ||
-          user.Subscription.end_date ||
-          null,
-
-        current_period_end,
-        cancel_at_period_end,
-
-        Plan: user.Subscription.Plan
-          ? {
-              id: user.Subscription.Plan.id,
-              name: user.Subscription.Plan.name,
-              price: user.Subscription.Plan.price,
-            }
-          : null,
-      };
-    }
-
     res.json({
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
-      stripe_customer_id: user.stripe_customer_id,
-      subscription,
+      subscription: user.Subscription || null,
       notification_preferences: user.notification_preferences,
     });
   } catch (error) {

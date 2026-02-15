@@ -10,48 +10,68 @@ Subscription.init(
       autoIncrement: true,
       primaryKey: true
     },
+
     user_id: {
       type: DataTypes.INTEGER,
       allowNull: false
     },
+
     plan_id: {
       type: DataTypes.INTEGER,
       allowNull: true
     },
-    stripe_subscription_id: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      unique: true
+
+    payment_method_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     },
+
     status: {
       type: DataTypes.ENUM(
-        "trial",
-        "pending",
-        "active",
-        "past_due",
-        "expired",
-        "canceled"
+        "TRIAL",
+        "ACTIVE",
+        "PAST_DUE",
+        "FAILED",
+        "EXPIRED",
+        "CANCELED"
       ),
-      defaultValue: "trial",
+      defaultValue: "TRIAL",
       allowNull: false
     },
 
-    start_date: {
+    plan_price: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
+    },
+
+    currency: {
+      type: DataTypes.STRING,
+      defaultValue: "COP"
+    },
+
+    current_period_start: {
       type: DataTypes.DATE,
       allowNull: false
     },
-    end_date: {
+
+    current_period_end: {
       type: DataTypes.DATE,
-      allowNull: true
+      allowNull: false
     },
-    trial_end_date: {
+
+    next_billing_date: {
       type: DataTypes.DATE,
-      allowNull: true
+      allowNull: false
     },
-    last_paid_invoice_id: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      unique: true
+
+    retry_count: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
+    },
+    cancel_at_period_end: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
     }
 
   },
@@ -59,7 +79,8 @@ Subscription.init(
     sequelize,
     modelName: "Subscription",
     tableName: "subscriptions",
-    underscored: true
+    underscored: true,
+    timestamps: true
   }
 );
 

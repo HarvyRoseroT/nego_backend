@@ -1,5 +1,5 @@
-const { DataTypes } = require("sequelize")
-const sequelize = require("../config/database")
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/database");
 
 const User = sequelize.define(
   "User",
@@ -9,13 +9,13 @@ const User = sequelize.define(
       primaryKey: true,
       autoIncrement: true
     },
+
     name: {
       type: DataTypes.STRING,
       allowNull: false,
-      validate: {
-        len: [2, 100]
-      }
+      validate: { len: [2, 100] }
     },
+
     email: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -24,39 +24,45 @@ const User = sequelize.define(
         msg: "Email already registered"
       },
       validate: {
-        isEmail: {
-          msg: "Invalid email format"
-        }
+        isEmail: { msg: "Invalid email format" }
       }
     },
+
     password: {
       type: DataTypes.STRING,
       allowNull: false
     },
+
     role: {
       type: DataTypes.ENUM("superadmin", "client"),
       defaultValue: "client"
     },
+
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
     },
+
     lastLogin: {
       type: DataTypes.DATE
     },
+
     emailVerified: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
     },
+
     emailVerifiedAt: {
       type: DataTypes.DATE,
       allowNull: true
     },
-    stripe_customer_id: {
+
+    // NUEVO → Para trazabilidad con Wompi
+    wompi_customer_email: {
       type: DataTypes.STRING,
-      allowNull: true,
-      unique: true
+      allowNull: true
     },
+
     notification_preferences: {
       type: DataTypes.JSONB,
       allowNull: false,
@@ -79,11 +85,11 @@ const User = sequelize.define(
       }
     }
   }
-)
+);
 
 User.prototype.updateLastLogin = async function () {
-  this.lastLogin = new Date()
-  await this.save()
-}
+  this.lastLogin = new Date();
+  await this.save();
+};
 
-module.exports = User
+module.exports = User;

@@ -7,8 +7,7 @@ module.exports = {
     const plans = [
       {
         name: 'Mensual',
-        price: 2990000, 
-        stripe_price_id: 'price_1SqnG6DZkz7sozFUZLQy9XZU',
+        price: 3990000,
         currency: 'COP',
         interval: 'month',
         duration_days: 30,
@@ -16,7 +15,26 @@ module.exports = {
         created_at: now,
         updated_at: now,
       },
-      
+      {
+        name: 'Anual',
+        price: 39900000,
+        currency: 'COP',
+        interval: 'year',
+        duration_days: 365,
+        is_active: true,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        name: 'Test 1 Día',
+        price: 200000, 
+        currency: 'COP',
+        interval: 'day',
+        duration_days: 1,
+        is_active: true,
+        created_at: now,
+        updated_at: now,
+      },
     ];
 
     for (const plan of plans) {
@@ -25,7 +43,6 @@ module.exports = {
         INSERT INTO plans (
           name,
           price,
-          stripe_price_id,
           currency,
           interval,
           duration_days,
@@ -36,7 +53,6 @@ module.exports = {
         VALUES (
           :name,
           :price,
-          :stripe_price_id,
           :currency,
           :interval,
           :duration_days,
@@ -44,9 +60,12 @@ module.exports = {
           :created_at,
           :updated_at
         )
-        ON CONFLICT (stripe_price_id)
+        ON CONFLICT (name)
         DO UPDATE SET
           price = EXCLUDED.price,
+          duration_days = EXCLUDED.duration_days,
+          interval = EXCLUDED.interval,
+          is_active = EXCLUDED.is_active,
           updated_at = EXCLUDED.updated_at
         `,
         {
@@ -57,7 +76,9 @@ module.exports = {
     }
   },
 
-  async down() {
-    return Promise.resolve();
+  async down(queryInterface) {
+    await queryInterface.bulkDelete('plans', {
+      name: ['Mensual', 'Anual', 'Test 1 Día']
+    });
   },
 };

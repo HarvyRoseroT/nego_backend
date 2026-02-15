@@ -8,6 +8,8 @@ const Seccion = require("./Seccion");
 const Producto = require("./Producto");
 const Plan = require("./Plan");
 const Subscription = require("./Subscription");
+const PaymentMethod = require("./PaymentMethod");
+const Transaction = require("./Transaction");
 const AnalyticsEvent = require("./AnalyticsEvent");
 const EmailVerificationToken = require("./EmailVerificationToken");
 const PasswordResetToken = require("./PasswordResetToken");
@@ -75,6 +77,39 @@ Subscription.belongsTo(Plan, {
   foreignKey: "plan_id",
 });
 
+User.hasMany(PaymentMethod, {
+  foreignKey: "user_id",
+  onDelete: "CASCADE",
+});
+PaymentMethod.belongsTo(User, {
+  foreignKey: "user_id",
+});
+
+Subscription.belongsTo(PaymentMethod, {
+  foreignKey: "payment_method_id",
+});
+PaymentMethod.hasMany(Subscription, {
+  foreignKey: "payment_method_id",
+});
+
+Subscription.hasMany(Transaction, {
+  foreignKey: "subscription_id",
+  onDelete: "CASCADE",
+});
+Transaction.belongsTo(Subscription, {
+  foreignKey: "subscription_id",
+});
+
+User.hasMany(Transaction, {
+  foreignKey: "user_id",
+  onDelete: "CASCADE",
+});
+
+Transaction.belongsTo(User, {
+  foreignKey: "user_id",
+});
+
+
 User.hasMany(EmailVerificationToken, {
   foreignKey: "user_id",
   onDelete: "CASCADE",
@@ -114,6 +149,8 @@ module.exports = {
   Producto,
   Plan,
   Subscription,
+  PaymentMethod,
+  Transaction,
   AnalyticsEvent,
   EmailVerificationToken,
   PasswordResetToken,

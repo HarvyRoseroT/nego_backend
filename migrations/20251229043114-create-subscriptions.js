@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 module.exports = {
   async up(queryInterface, Sequelize) {
@@ -32,44 +32,67 @@ module.exports = {
         onDelete: 'SET NULL'
       },
 
-      stripe_subscription_id: {
-        type: Sequelize.STRING,
+      payment_method_id: {
+        type: Sequelize.INTEGER,
         allowNull: true,
-        unique: true
+        references: {
+          model: 'payment_methods',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
       },
 
       status: {
         type: Sequelize.ENUM(
-          'trial',
-          'pending',
-          'active',
-          'past_due',
-          'expired',
-          'canceled'
+          'TRIAL',
+          'ACTIVE',
+          'PAST_DUE',
+          'FAILED',
+          'EXPIRED',
+          'CANCELED'
         ),
         allowNull: false,
-        defaultValue: 'trial'
+        defaultValue: 'TRIAL'
       },
 
-      start_date: {
+      plan_price: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+      },
+
+      currency: {
+        type: Sequelize.STRING(10),
+        allowNull: false,
+        defaultValue: 'COP'
+      },
+
+      current_period_start: {
         type: Sequelize.DATE,
         allowNull: false
       },
 
-      end_date: {
+      current_period_end: {
         type: Sequelize.DATE,
-        allowNull: true
+        allowNull: false
       },
 
-      trial_end_date: {
+      next_billing_date: {
         type: Sequelize.DATE,
-        allowNull: true
+        allowNull: false
       },
 
-      last_paid_invoice_id: {
-        type: Sequelize.STRING,
-        allowNull: true,
-        unique: true
+      retry_count: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+      },
+
+      cancel_at_period_end: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
       },
 
       created_at: {
@@ -83,14 +106,30 @@ module.exports = {
         allowNull: false,
         defaultValue: Sequelize.literal('NOW()')
       }
-    })
+    });
+
+    await queryInterface.addIndex('subscriptions', ['user_id'], {
+      name: 'subscriptions_user_id_index'
+    });
+
+    await queryInterface.addIndex('subscriptions', ['plan_id'], {
+      name: 'subscriptions_plan_id_index'
+    });
+
+    await queryInterface.addIndex('subscriptions', ['status'], {
+      name: 'subscriptions_status_index'
+    });
+
+    await queryInterface.addIndex('subscriptions', ['next_billing_date'], {
+      name: 'subscriptions_next_billing_date_index'
+    });
   },
 
   async down(queryInterface) {
-    await queryInterface.dropTable('subscriptions')
+    await queryInterface.dropTable('subscriptions');
 
     await queryInterface.sequelize.query(
       'DROP TYPE IF EXISTS "enum_subscriptions_status";'
-    )
+    );
   }
-}
+};

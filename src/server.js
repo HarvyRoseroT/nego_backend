@@ -2,6 +2,8 @@ require("dotenv").config();
 const app = require("./app");
 const { initDb } = require("./models");
 
+require("./services/subscription.cron");
+
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 
 const start = async () => {
