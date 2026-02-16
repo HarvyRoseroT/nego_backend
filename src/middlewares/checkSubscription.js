@@ -1,6 +1,6 @@
 const { Subscription, Establecimiento } = require("../models");
 
-const GRACE_PERIOD_DAYS = 5;
+const GRACE_PERIOD_DAYS = 0;
 
 module.exports = async (req, res, next) => {
   try {
