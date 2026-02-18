@@ -5,11 +5,10 @@ const {
   sendRenewalEmail
 } = require("../../services/emailService");
 
-function validateSignature(body) {
-  const { data, timestamp, signature } = body;
+function validateSignature(body, headerChecksum) {
+  const { data, timestamp } = body;
 
-  if (!signature || !signature.checksum) return false;
-  if (!data?.transaction) return false;
+  if (!data?.transaction || !timestamp || !headerChecksum) return false;
 
   const transaction = data.transaction;
 
@@ -25,15 +24,16 @@ function validateSignature(body) {
     .update(stringToSign)
     .digest("hex");
 
-  return computed === signature.checksum;
+  return computed === headerChecksum;
 }
 
 async function handleWompiWebhook(req, res) {
   try {
+    const headerChecksum = req.headers["x-event-checksum"];
     const body = req.body;
 
     if (process.env.WOMPI_ENV === "production") {
-      const isValid = validateSignature(body);
+      const isValid = validateSignature(body, headerChecksum);
       if (!isValid) {
         return res.status(401).json({ message: "Invalid signature" });
       }

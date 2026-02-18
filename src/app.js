@@ -34,14 +34,9 @@ app.use(
 
 app.use(morgan("dev"));
 
-app.use(
-  "/api/webhooks/wompi",
-  express.raw({ type: "application/json" })
-);
+app.use(express.json());
 
 app.use("/api/webhooks/wompi", wompiWebhook);
-
-app.use(express.json());
 
 app.get("/", (req, res) => {
   res.status(200).json({
@@ -64,12 +59,9 @@ app.use("/api/secciones", seccionRoutes);
 app.use("/api/productos", productoRoutes);
 app.use("/planes", planRoutes);
 app.use("/dashboard/analytics", analyticsStatsRoutes);
-
 app.use("/api/billing", billingRoutes);
-
 app.use("/app", usuarioAppRoutes);
 app.use("/app/analytics", analyticsRoutes);
-
 app.use("/", deepLinkRoutes);
 
 module.exports = app;
