@@ -5,52 +5,46 @@ const {
   sendRenewalEmail
 } = require("../../services/emailService");
 
-function validateSignature(rawBody, signature) {
+function validateSignature(body) {
+  const { data, timestamp, signature } = body;
+
+  if (!signature || !signature.checksum) return false;
+  if (!data?.transaction) return false;
+
+  const transaction = data.transaction;
+
+  const stringToSign =
+    transaction.id +
+    transaction.status +
+    transaction.amount_in_cents +
+    timestamp +
+    process.env.WOMPI_EVENTS_SECRET;
+
   const computed = crypto
-    .createHmac("sha256", process.env.WOMPI_EVENTS_SECRET)
-    .update(rawBody)
+    .createHash("sha256")
+    .update(stringToSign)
     .digest("hex");
 
-  return computed === signature;
+  return computed === signature.checksum;
 }
 
 async function handleWompiWebhook(req, res) {
   try {
-    const signature =
-      req.headers["x-event-signature"] ||
-      req.headers["x-signature"];
-
-    const rawBody = req.body;
-
-    let parsedBody;
-
-    if (Buffer.isBuffer(rawBody)) {
-      parsedBody = JSON.parse(rawBody.toString());
-    } else if (typeof rawBody === "string") {
-      parsedBody = JSON.parse(rawBody);
-    } else {
-      parsedBody = rawBody;
-    }
+    const body = req.body;
 
     if (process.env.WOMPI_ENV === "production") {
-      if (!signature) {
-        return res.status(400).json({ message: "Missing signature" });
-      }
-
-      const isValid = validateSignature(rawBody, signature);
-
+      const isValid = validateSignature(body);
       if (!isValid) {
         return res.status(401).json({ message: "Invalid signature" });
       }
     }
 
-    if (parsedBody.event !== "transaction.updated") {
+    if (body.event !== "transaction.updated") {
       return res.status(200).json({ received: true });
     }
 
-    const transactionData = parsedBody.data?.transaction;
-
-    if (!transactionData?.reference) {
+    const transactionData = body.data?.transaction;
+    if (!transactionData) {
       return res.status(200).json({ received: true });
     }
 
@@ -58,8 +52,11 @@ async function handleWompiWebhook(req, res) {
       return res.status(200).json({ received: true });
     }
 
-    const referenceParts = transactionData.reference.split("-");
+    if (!transactionData.reference) {
+      return res.status(200).json({ received: true });
+    }
 
+    const referenceParts = transactionData.reference.split("-");
     if (referenceParts.length < 3) {
       return res.status(200).json({ received: true });
     }
@@ -74,21 +71,16 @@ async function handleWompiWebhook(req, res) {
       return res.status(200).json({ received: true });
     }
 
+    if (transactionData.amount_in_cents !== plan.price) {
+      return res.status(400).json({ message: "Amount mismatch" });
+    }
+
     const existingTransaction = await Transaction.findOne({
-      where: { reference: transactionData.reference }
+      where: { wompi_transaction_id: transactionData.id }
     });
 
-    if (!existingTransaction) {
-      await Transaction.create({
-        user_id: user.id,
-        subscription_id: null,
-        reference: transactionData.reference,
-        wompi_transaction_id: transactionData.id,
-        amount: transactionData.amount_in_cents,
-        currency: transactionData.currency,
-        status: transactionData.status,
-        paid_at: new Date()
-      });
+    if (existingTransaction) {
+      return res.status(200).json({ received: true });
     }
 
     const now = new Date();
@@ -126,11 +118,25 @@ async function handleWompiWebhook(req, res) {
       await subscription.save();
     }
 
-    const formattedAmount = (transactionData.amount_in_cents / 100).toLocaleString("es-CO", {
-      style: "currency",
+    await Transaction.create({
+      user_id: user.id,
+      subscription_id: subscription.id,
+      reference: transactionData.reference,
+      wompi_transaction_id: transactionData.id,
+      amount: transactionData.amount_in_cents,
       currency: transactionData.currency,
-      minimumFractionDigits: 0
+      status: transactionData.status,
+      paid_at: new Date(transactionData.finalized_at || now)
     });
+
+    const formattedAmount = (transactionData.amount_in_cents / 100).toLocaleString(
+      "es-CO",
+      {
+        style: "currency",
+        currency: transactionData.currency,
+        minimumFractionDigits: 0
+      }
+    );
 
     const invoiceUrl = `${process.env.FRONTEND_URL}/facturas`;
 

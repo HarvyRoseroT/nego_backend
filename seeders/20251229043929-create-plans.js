@@ -27,7 +27,7 @@ module.exports = {
       },
       {
         name: 'Test 1 Día',
-        price: 200000, 
+        price: 150000, 
         currency: 'COP',
         interval: 'day',
         duration_days: 1,
