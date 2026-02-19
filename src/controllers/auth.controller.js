@@ -19,8 +19,9 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    const now = new Date();
+    const trialEnd = new Date();
     trialEnd.setDate(trialEnd.getDate() + 30);
+
 
     const user = await User.create(
       {
