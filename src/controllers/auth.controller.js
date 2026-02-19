@@ -19,9 +19,8 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    const trialEnd = new Date();
-    trialEnd.setDate(trialEnd.getDate() + 30);
-
+    const now = new Date();
+    const trialEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     const user = await User.create(
       {
@@ -34,6 +33,7 @@ exports.register = async (req, res) => {
       },
       { transaction: t }
     );
+
 
     await Subscription.create(
       {
