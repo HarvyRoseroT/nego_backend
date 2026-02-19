@@ -2,7 +2,6 @@ const crypto = require("crypto");
 const { Transaction, Subscription, User, Plan } = require("../../models");
 const {
   sendPaymentSuccessEmail,
-  sendRenewalEmail
 } = require("../../services/emailService");
 
 function validateSignature(body, headerChecksum) {
@@ -92,8 +91,6 @@ async function handleWompiWebhook(req, res) {
       where: { user_id: user.id }
     });
 
-    const wasActive = subscription?.status === "ACTIVE";
-
     if (!subscription) {
       subscription = await Subscription.create({
         user_id: user.id,
@@ -103,7 +100,6 @@ async function handleWompiWebhook(req, res) {
         currency: plan.currency,
         current_period_start: now,
         current_period_end: nextPeriod,
-        next_billing_date: nextPeriod,
         retry_count: 0
       });
     } else {
@@ -113,7 +109,6 @@ async function handleWompiWebhook(req, res) {
       subscription.currency = plan.currency;
       subscription.current_period_start = now;
       subscription.current_period_end = nextPeriod;
-      subscription.next_billing_date = nextPeriod;
       subscription.retry_count = 0;
       await subscription.save();
     }
@@ -140,21 +135,12 @@ async function handleWompiWebhook(req, res) {
 
     const invoiceUrl = `${process.env.FRONTEND_URL}/facturas`;
 
-    if (wasActive) {
-      await sendRenewalEmail({
-        to: user.email,
-        amount: formattedAmount,
-        currency: transactionData.currency,
-        invoiceUrl
-      });
-    } else {
-      await sendPaymentSuccessEmail({
-        to: user.email,
-        amount: formattedAmount,
-        currency: transactionData.currency,
-        invoiceUrl
-      });
-    }
+    await sendPaymentSuccessEmail({
+      to: user.email,
+      amount: formattedAmount,
+      currency: transactionData.currency,
+      invoiceUrl
+    });
 
     return res.status(200).json({ received: true });
 

@@ -72,7 +72,12 @@ Subscription.init(
     cancel_at_period_end: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
+    },
+    expiration_notified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
     }
+
 
   },
   {

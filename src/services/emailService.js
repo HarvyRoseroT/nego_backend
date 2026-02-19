@@ -188,23 +188,77 @@ exports.sendPaymentSuccessEmail = async ({ to, amount, currency, invoiceUrl }) =
   });
 };
 
-exports.sendRenewalEmail = async ({ to, amount, currency, invoiceUrl }) => {
+exports.sendPlanExpiredEmail = async ({ to }) => {
   return sendEmail({
     to,
-    subject: "Tu suscripción fue renovada",
+    subject: "Tu plan ha finalizado",
     html: `
-      <div style="font-family:Arial,sans-serif;background:#f9fafb;padding:24px">
-        <div style="max-width:520px;margin:auto;background:white;border-radius:12px;padding:24px">
-          <h2>Renovación exitosa</h2>
-          <p>Monto: ${amount} ${currency}</p>
-          <a href="${invoiceUrl}" style="display:inline-block;padding:12px 20px;background:#3fa10a;color:white;text-decoration:none;border-radius:8px;font-weight:600;">
-            Ver factura
-          </a>
+      <div style="font-family:Arial,Helvetica,sans-serif;background:#f9fafb;padding:40px 16px;">
+        <div style="max-width:560px;margin:auto;background:#ffffff;border-radius:14px;padding:40px 32px;box-shadow:0 10px 25px rgba(0,0,0,0.05);">
+
+          <div style="text-align:center;margin-bottom:24px;">
+            <div style="display:inline-block;background:#ef444415;color:#ef4444;font-weight:700;padding:8px 14px;border-radius:20px;font-size:13px;letter-spacing:.5px;">
+              PLAN FINALIZADO
+            </div>
+          </div>
+
+          <h2 style="margin:0 0 12px 0;font-size:24px;color:#111827;text-align:center;">
+            Tu suscripción ha expirado
+          </h2>
+
+          <p style="margin:0 0 28px 0;font-size:15px;color:#4b5563;line-height:1.6;text-align:center;">
+            El período de tu plan ha terminado y actualmente tu cuenta se encuentra inactiva.
+          </p>
+
+          <p style="margin:0 0 28px 0;font-size:15px;color:#4b5563;line-height:1.6;text-align:center;">
+            Para continuar utilizando todas las funcionalidades de Nego, debes realizar un nuevo pago.
+          </p>
+
+          <div style="text-align:center;margin:32px 0;">
+            <a 
+              href="${process.env.FRONTEND_URL}/configuracion" 
+              style="
+                display:inline-block;
+                padding:14px 26px;
+                background:#3fa10a;
+                color:#ffffff;
+                text-decoration:none;
+                border-radius:10px;
+                font-weight:700;
+                font-size:15px;
+                box-shadow:0 6px 14px rgba(63,161,10,0.25);
+              "
+            >
+              Reactivar mi plan
+            </a>
+          </div>
+
+          <p style="margin:0 0 8px 0;font-size:13px;color:#6b7280;text-align:center;">
+            Si tienes alguna pregunta, puedes responder a este correo.
+          </p>
+
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;" />
+
+          <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">
+            Esperamos verte nuevamente pronto.
+          </p>
+
         </div>
       </div>
     `,
+    text: `
+        Tu plan ha finalizado.
+
+        El período de tu suscripción terminó y tu cuenta se encuentra inactiva.
+
+        Para continuar utilizando Nego, realiza un nuevo pago aquí:
+        ${process.env.FRONTEND_URL}
+
+        Gracias por confiar en nosotros.
+        `
   });
 };
+
 
 exports.sendPaymentFailedEmail = async ({ to }) => {
   return sendEmail({

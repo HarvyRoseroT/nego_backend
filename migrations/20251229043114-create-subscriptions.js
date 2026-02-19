@@ -95,6 +95,12 @@ module.exports = {
         defaultValue: false
       },
 
+      expiration_notified: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      },
+
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,
@@ -127,7 +133,6 @@ module.exports = {
 
   async down(queryInterface) {
     await queryInterface.dropTable('subscriptions');
-
     await queryInterface.sequelize.query(
       'DROP TYPE IF EXISTS "enum_subscriptions_status";'
     );

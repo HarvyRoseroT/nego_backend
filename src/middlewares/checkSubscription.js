@@ -1,4 +1,5 @@
-const { Subscription, Establecimiento } = require("../models");
+const { Subscription, Establecimiento, User } = require("../models");
+const { sendPlanExpiredEmail } = require("../services/emailService");
 
 const GRACE_PERIOD_DAYS = 0;
 
@@ -19,42 +20,48 @@ module.exports = async (req, res, next) => {
 
     const now = new Date();
 
-    if (subscription.status === "TRIAL") {
-      if (subscription.current_period_end && now > subscription.current_period_end) {
-        subscription.status = "EXPIRED";
-        await subscription.save();
-        await disableEstablecimientos(userId);
-        return res.status(402).json({
-          message: "Trial expired",
-          status: "EXPIRED",
-        });
+    if (
+      (subscription.status === "TRIAL" ||
+        subscription.status === "ACTIVE") &&
+      subscription.current_period_end &&
+      now > subscription.current_period_end
+    ) {
+      subscription.status = "EXPIRED";
+
+      if (!subscription.expiration_notified) {
+        const user = await User.findByPk(userId);
+
+        if (user?.email) {
+          await sendPlanExpiredEmail({
+            to: user.email,
+          });
+        }
+
+        subscription.expiration_notified = true;
       }
 
-      await enableEstablecimientos(userId);
-      return next();
+      await subscription.save();
+      await disableEstablecimientos(userId);
+
+      return res.status(402).json({
+        message: "Subscription expired",
+        status: "EXPIRED",
+      });
     }
 
-    if (subscription.status === "ACTIVE") {
-      if (
-        subscription.current_period_end &&
-        now > subscription.current_period_end
-      ) {
-        subscription.status = "EXPIRED";
-        await subscription.save();
-        await disableEstablecimientos(userId);
-        return res.status(402).json({
-          message: "Subscription expired",
-          status: "EXPIRED",
-        });
-      }
-
+    if (
+      subscription.status === "ACTIVE" ||
+      subscription.status === "TRIAL"
+    ) {
       await enableEstablecimientos(userId);
       return next();
     }
 
     if (subscription.status === "PAST_DUE") {
       const graceLimit = new Date(subscription.updatedAt);
-      graceLimit.setDate(graceLimit.getDate() + GRACE_PERIOD_DAYS);
+      graceLimit.setDate(
+        graceLimit.getDate() + GRACE_PERIOD_DAYS
+      );
 
       if (now <= graceLimit) {
         await enableEstablecimientos(userId);
