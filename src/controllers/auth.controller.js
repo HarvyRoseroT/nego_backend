@@ -20,7 +20,7 @@ exports.register = async (req, res) => {
     }
 
     const now = new Date();
-    const trialEnd = new Date(Date.now() + 2 * 60 * 60 * 1000);
+    trialEnd.setDate(trialEnd.getDate() + 30);
 
     const user = await User.create(
       {
