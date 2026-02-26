@@ -1,4 +1,4 @@
-const { User, Subscription, Plan, EmailVerificationToken } = require("../models");
+const { User, Subscription, Plan, EmailVerificationToken, PartnerProfile,  Referral,} = require("../models");
 const { hashPassword, comparePassword } = require("../utils/password");
 const { generateToken } = require("../utils/jwt");
 const { generateEmailToken } = require("../utils/emailToken");
@@ -7,11 +7,12 @@ const stripe = require("../config/stripe");
 const sequelize = require("../config/database");
 const { Op } = require("sequelize");
 
+
 exports.register = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, referralCode } = req.body;
 
     const exists = await User.findOne({ where: { email }, transaction: t });
     if (exists) {
@@ -19,8 +20,30 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Email already registered" });
     }
 
+    let partnerProfile = null;
+    let trialDays = 14;
+
+    if (referralCode) {
+      partnerProfile = await PartnerProfile.findOne({
+        where: {
+          referral_code: referralCode,
+          is_active: true,
+        },
+        transaction: t,
+      });
+
+      if (!partnerProfile) {
+        await t.rollback();
+        return res.status(400).json({ message: "Invalid referral code" });
+      }
+
+      trialDays = 30;
+    }
+
     const now = new Date();
-    const trialEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const trialEnd = new Date(
+      Date.now() + trialDays * 24 * 60 * 60 * 1000
+    );
 
     const user = await User.create(
       {
@@ -33,7 +56,6 @@ exports.register = async (req, res) => {
       },
       { transaction: t }
     );
-
 
     await Subscription.create(
       {
@@ -49,6 +71,17 @@ exports.register = async (req, res) => {
       },
       { transaction: t }
     );
+
+    if (partnerProfile) {
+      await Referral.create(
+        {
+          partner_id: partnerProfile.id,
+          client_user_id: user.id,
+          trial_days_assigned: trialDays,
+        },
+        { transaction: t }
+      );
+    }
 
     const token = generateEmailToken();
 
@@ -78,8 +111,6 @@ exports.register = async (req, res) => {
     return res.status(500).json({ message: "Register error" });
   }
 };
-
-
 
 exports.verifyEmail = async (req, res) => {
   try {

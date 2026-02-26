@@ -13,6 +13,9 @@ const Transaction = require("./Transaction");
 const AnalyticsEvent = require("./AnalyticsEvent");
 const EmailVerificationToken = require("./EmailVerificationToken");
 const PasswordResetToken = require("./PasswordResetToken");
+const PartnerProfile = require("./PartnerProfile");
+const Referral = require("./Referral");
+const Commission = require("./Commission");
 
 User.hasMany(Establecimiento, {
   foreignKey: "user_id",
@@ -134,6 +137,55 @@ AnalyticsEvent.belongsTo(Establecimiento, {
   foreignKey: "establecimiento_id",
 });
 
+// =============================
+// PARTNER SYSTEM
+// =============================
+
+// User → PartnerProfile
+User.hasOne(PartnerProfile, {
+  foreignKey: "user_id",
+  onDelete: "CASCADE",
+});
+PartnerProfile.belongsTo(User, {
+  foreignKey: "user_id",
+});
+
+// PartnerProfile → Referral
+PartnerProfile.hasMany(Referral, {
+  foreignKey: "partner_id",
+  onDelete: "CASCADE",
+});
+Referral.belongsTo(PartnerProfile, {
+  foreignKey: "partner_id",
+});
+
+// User (client) → Referral
+User.hasOne(Referral, {
+  foreignKey: "client_user_id",
+  onDelete: "CASCADE",
+});
+Referral.belongsTo(User, {
+  foreignKey: "client_user_id",
+});
+
+// Referral → Commission
+Referral.hasMany(Commission, {
+  foreignKey: "referral_id",
+  onDelete: "CASCADE",
+});
+Commission.belongsTo(Referral, {
+  foreignKey: "referral_id",
+});
+
+// Subscription → Commission
+Subscription.hasMany(Commission, {
+  foreignKey: "subscription_id",
+  onDelete: "CASCADE",
+});
+Commission.belongsTo(Subscription, {
+  foreignKey: "subscription_id",
+});
+
 const initDb = async () => {
   await sequelize.authenticate();
 };
@@ -154,4 +206,8 @@ module.exports = {
   AnalyticsEvent,
   EmailVerificationToken,
   PasswordResetToken,
+
+  PartnerProfile,
+  Referral,
+  Commission,
 };
