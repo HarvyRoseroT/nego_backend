@@ -352,3 +352,77 @@ exports.sendCancellationEmail = async ({ to }) => {
     `,
   });
 };
+
+exports.sendPartnerWelcomeEmail = async ({ to, name, password }) => {
+  const panelUrl = process.env.FRONTEND_URL;
+
+  return sendEmail({
+    to,
+    subject: "Tu acceso como Partner de Nego",
+    html: `
+    <div style="font-family:Arial,Helvetica,sans-serif;background:#f9fafb;padding:40px 16px;">
+      <div style="max-width:560px;margin:auto;background:#ffffff;border-radius:14px;padding:40px 32px;box-shadow:0 10px 25px rgba(0,0,0,0.05);">
+
+        <div style="text-align:center;margin-bottom:24px;">
+          <div style="display:inline-block;background:#3fa10a15;color:#3fa10a;font-weight:700;padding:8px 14px;border-radius:20px;font-size:13px;letter-spacing:.5px;">
+            NUEVO PARTNER
+          </div>
+        </div>
+
+        <h2 style="margin:0 0 12px 0;font-size:24px;color:#111827;text-align:center;">
+          Bienvenido al programa de Partners de Nego
+        </h2>
+
+        <p style="margin:0 0 24px 0;font-size:15px;color:#4b5563;line-height:1.6;text-align:center;">
+          Tu cuenta de partner ha sido creada exitosamente.  
+          Desde el panel podrás ver tus clientes referidos, comisiones y estadísticas.
+        </p>
+
+        <div style="background:#f3f4f6;border-radius:10px;padding:18px 20px;margin:24px 0;">
+          <p style="margin:0 0 10px 0;font-size:14px;color:#111827;">
+            <strong>Acceso al panel</strong>
+          </p>
+
+          <p style="margin:0;font-size:14px;color:#374151;">
+            <strong>Email:</strong> ${to}
+          </p>
+
+          <p style="margin:6px 0 0 0;font-size:14px;color:#374151;">
+            <strong>Contraseña:</strong> ${password}
+          </p>
+        </div>
+
+        <div style="text-align:center;margin:32px 0;">
+          <a
+            href="${panelUrl}"
+            style="
+              display:inline-block;
+              padding:14px 26px;
+              background:#3fa10a;
+              color:#ffffff;
+              text-decoration:none;
+              border-radius:10px;
+              font-weight:700;
+              font-size:15px;
+              box-shadow:0 6px 14px rgba(63,161,10,0.25);
+            "
+          >
+            Ir al panel de partners
+          </a>
+        </div>
+
+        <p style="margin:0 0 8px 0;font-size:13px;color:#6b7280;text-align:center;">
+          Te recomendamos cambiar tu contraseña después de iniciar sesión.
+        </p>
+
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;" />
+
+        <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">
+          Nego — Plataforma de digitalización para restaurantes
+        </p>
+
+      </div>
+    </div>
+    `
+  });
+};

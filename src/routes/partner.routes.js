@@ -6,7 +6,10 @@ const {
   createPartner,
   listPartners,
   updatePartnerStatus,
-  deletePartner
+  deletePartner,
+  listCommissions,
+  payCommissions,
+  listAllPayments
 } = require("../controllers/partner.controller");
 
 const authMiddleware = require("../middlewares/auth.middleware");
@@ -40,6 +43,27 @@ router.delete(
   authMiddleware,
   requireRole("superadmin"),
   deletePartner
+);
+
+router.get(
+  "/commissions",
+  authMiddleware,
+  requireRole("superadmin"),
+  listCommissions
+);
+
+router.post(
+  "/commissions/pay",
+  authMiddleware,
+  requireRole("superadmin"),
+  payCommissions
+);
+
+router.get(
+  "/payments",
+  authMiddleware,
+  requireRole("superadmin"),
+  listAllPayments
 );
 
 module.exports = router;

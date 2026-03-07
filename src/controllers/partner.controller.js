@@ -1,7 +1,9 @@
 const sequelize = require("../config/database");
-const { User, PartnerProfile } = require("../models");
 const { hashPassword } = require("../utils/hash");
 const { generateReferralCodeFromName } = require("../utils/referralCode");
+const { Commission, Referral, PartnerProfile, User } = require("../models");
+const { Op } = require("sequelize");
+const { sendPartnerWelcomeEmail } = require("../services/emailService");
 
 exports.createPartner = async (req, res) => {
   const t = await sequelize.transaction();
@@ -16,22 +18,30 @@ exports.createPartner = async (req, res) => {
       });
     }
 
-    const exists = await User.findOne({ where: { email }, transaction: t });
+    const exists = await User.findOne({
+      where: { email },
+      transaction: t,
+    });
+
     if (exists) {
       await t.rollback();
-      return res.status(400).json({ message: "Email already registered" });
+      return res.status(400).json({
+        message: "Email already registered",
+      });
     }
 
     const referralCode = await generateReferralCodeFromName(name, t);
+
+    const hashedPassword = await hashPassword(password);
 
     const user = await User.create(
       {
         name,
         email,
-        password: await hashPassword(password),
+        password: hashedPassword,
         role: "partner",
         emailVerified: true,
-        isActive: true
+        isActive: true,
       },
       { transaction: t }
     );
@@ -47,17 +57,29 @@ exports.createPartner = async (req, res) => {
 
     await t.commit();
 
+    try {
+      await sendPartnerWelcomeEmail({
+        to: email,
+        name,
+        password,
+      });
+    } catch (emailError) {
+      console.error("PARTNER EMAIL ERROR:", emailError);
+    }
+
     return res.status(201).json({
       id: user.id,
       name: user.name,
       email: user.email,
       referralCode,
-      active: user.isActive
+      active: user.isActive,
     });
 
   } catch (error) {
     await t.rollback();
+
     console.error("CREATE PARTNER ERROR:", error);
+
     return res.status(500).json({
       message: "Error creando partner",
       error: error.message,
@@ -197,6 +219,135 @@ exports.deletePartner = async (req, res) => {
     console.error("DELETE PARTNER ERROR:", error);
     return res.status(500).json({
       message: "Error eliminando partner",
+    });
+  }
+};
+
+exports.listCommissions = async (req, res) => {
+  try {
+
+    const commissions = await Commission.findAll({
+      include: [
+        {
+          model: Referral,
+          include: [
+            {
+              model: PartnerProfile,
+              attributes: ["id", "referral_code"],
+              include: [
+                {
+                  model: User,
+                  attributes: ["id", "name", "email"]
+                }
+              ]
+            },
+            {
+              model: User,
+              as: "client",
+              attributes: ["id", "name", "email"]
+            }
+          ]
+        }
+      ],
+      order: [["created_at", "DESC"]]
+    });
+
+    return res.json(commissions);
+
+  } catch (error) {
+    console.error("LIST COMMISSIONS ERROR:", error);
+    return res.status(500).json({
+      message: "Error obteniendo comisiones"
+    });
+  }
+};
+
+exports.payCommissions = async (req, res) => {
+  try {
+
+    const { commissionIds } = req.body;
+
+    if (!Array.isArray(commissionIds) || commissionIds.length === 0) {
+      return res.status(400).json({
+        message: "commissionIds required"
+      });
+    }
+
+    const commissions = await Commission.findAll({
+      where: {
+        id: {
+          [Op.in]: commissionIds
+        },
+        status: "approved"
+      }
+    });
+
+    if (!commissions.length) {
+      return res.status(400).json({
+        message: "No approved commissions found"
+      });
+    }
+
+    await Commission.update(
+      {
+        status: "paid",
+        paid_at: new Date()
+      },
+      {
+        where: {
+          id: {
+            [Op.in]: commissionIds
+          },
+          status: "approved"
+        }
+      }
+    );
+
+    return res.json({
+      message: "Commissions marked as paid"
+    });
+
+  } catch (error) {
+    console.error("PAY COMMISSIONS ERROR:", error);
+    return res.status(500).json({
+      message: "Error paying commissions"
+    });
+  }
+};
+
+exports.listAllPayments = async (req, res) => {
+  try {
+    const payments = await Commission.findAll({
+      include: [
+        {
+          model: Referral,
+          include: [
+            {
+              model: User,
+              as: "client",
+              attributes: ["id", "name", "email"]
+            },
+            {
+              model: PartnerProfile,
+              include: [
+                {
+                  model: User,
+                  attributes: ["id", "name", "email"]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      order: [["createdAt", "DESC"]]
+    });
+
+    return res.json(payments);
+
+  } catch (error) {
+    console.error("LIST PAYMENTS ERROR:", error);
+    return res.status(500).json({
+      message: "Error obteniendo pagos"
     });
   }
 };

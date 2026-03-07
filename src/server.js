@@ -3,6 +3,7 @@ const app = require("./app");
 const { initDb } = require("./models");
 
 require("./services/subscription.cron");
+require("./services/commission.cron");
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 

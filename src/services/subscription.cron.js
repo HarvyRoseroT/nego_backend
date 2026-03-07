@@ -1,3 +1,4 @@
+console.log("Subscription cron initialized");
 const cron = require("node-cron");
 const { Op } = require("sequelize");
 const { Subscription, PaymentMethod, Transaction, User } = require("../models");

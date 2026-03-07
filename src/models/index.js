@@ -160,14 +160,18 @@ Referral.belongsTo(PartnerProfile, {
 });
 
 // User (client) → Referral
+
+
 User.hasOne(Referral, {
   foreignKey: "client_user_id",
+  as: "referral",
   onDelete: "CASCADE",
 });
+
 Referral.belongsTo(User, {
   foreignKey: "client_user_id",
+  as: "client"
 });
-
 // Referral → Commission
 Referral.hasMany(Commission, {
   foreignKey: "referral_id",

@@ -1,13 +1,13 @@
+
 const crypto = require("crypto");
 const { Transaction, Subscription, User, Plan } = require("../../models");
-const {
-  sendPaymentSuccessEmail,
-} = require("../../services/emailService");
+const { sendPaymentSuccessEmail } = require("../../services/emailService");
+const { processApprovedPayment } = require("../../services/commissionService");
 
-function validateSignature(body, headerChecksum) {
+function validateSignature(body, checksum) {
   const { data, timestamp } = body;
 
-  if (!data?.transaction || !timestamp || !headerChecksum) return false;
+  if (!data?.transaction || !timestamp || !checksum) return false;
 
   const transaction = data.transaction;
 
@@ -23,13 +23,16 @@ function validateSignature(body, headerChecksum) {
     .update(stringToSign)
     .digest("hex");
 
-  return computed === headerChecksum;
+  return computed === checksum;
 }
 
 async function handleWompiWebhook(req, res) {
   try {
-    const headerChecksum = req.headers["x-event-checksum"];
     const body = req.body;
+
+    const headerChecksum =
+      req.headers["x-event-checksum"] ||
+      body.signature?.checksum;
 
     if (process.env.WOMPI_ENV === "production") {
       const isValid = validateSignature(body, headerChecksum);
@@ -113,7 +116,7 @@ async function handleWompiWebhook(req, res) {
       await subscription.save();
     }
 
-    await Transaction.create({
+    const transaction = await Transaction.create({
       user_id: user.id,
       subscription_id: subscription.id,
       reference: transactionData.reference,
@@ -122,6 +125,13 @@ async function handleWompiWebhook(req, res) {
       currency: transactionData.currency,
       status: transactionData.status,
       paid_at: new Date(transactionData.finalized_at || now)
+    });
+
+    await processApprovedPayment({
+      user,
+      subscription,
+      transaction,
+      plan
     });
 
     const formattedAmount = (transactionData.amount_in_cents / 100).toLocaleString(

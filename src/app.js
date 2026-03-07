@@ -13,6 +13,7 @@ const planRoutes = require("./routes/plan.routes");
 const analyticsStatsRoutes = require("./routes/analytics.stats.routes");
 const billingRoutes = require("./routes/billing.routes");
 const partnerRoutes = require("./routes/partner.routes");
+const partnerPanelRoutes = require("./routes/partner.panel.routes");
 
 const usuarioAppRoutes = require("./routes/usuarioApp.routes");
 const analyticsRoutes = require("./routes/analytics.routes");
@@ -66,5 +67,6 @@ app.use("/app/analytics", analyticsRoutes);
 app.use("/", deepLinkRoutes);
 
 app.use("/api/partner", partnerRoutes);
+app.use("/api/partner/panel", partnerPanelRoutes);
 
 module.exports = app;
