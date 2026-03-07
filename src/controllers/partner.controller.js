@@ -62,6 +62,7 @@ exports.createPartner = async (req, res) => {
         to: email,
         name,
         password,
+        referralCode,
       });
     } catch (emailError) {
       console.error("PARTNER EMAIL ERROR:", emailError);

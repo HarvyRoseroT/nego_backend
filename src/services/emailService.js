@@ -353,7 +353,7 @@ exports.sendCancellationEmail = async ({ to }) => {
   });
 };
 
-exports.sendPartnerWelcomeEmail = async ({ to, name, password }) => {
+exports.sendPartnerWelcomeEmail = async ({ to, name, password, referralCode }) => {
   const panelUrl = process.env.FRONTEND_URL;
 
   return sendEmail({
@@ -377,6 +377,15 @@ exports.sendPartnerWelcomeEmail = async ({ to, name, password }) => {
           Tu cuenta de partner ha sido creada exitosamente.  
           Desde el panel podrás ver tus clientes referidos, comisiones y estadísticas.
         </p>
+
+        <div style="background:#ecfdf5;border-radius:10px;padding:18px 20px;margin:24px 0;text-align:center;">
+          <p style="margin:0 0 6px 0;font-size:13px;color:#065f46;">
+            Tu código de referido
+          </p>
+          <p style="margin:0;font-size:22px;font-weight:700;color:#10b981;letter-spacing:2px;">
+            ${referralCode}
+          </p>
+        </div>
 
         <div style="background:#f3f4f6;border-radius:10px;padding:18px 20px;margin:24px 0;">
           <p style="margin:0 0 10px 0;font-size:14px;color:#111827;">
@@ -412,7 +421,7 @@ exports.sendPartnerWelcomeEmail = async ({ to, name, password }) => {
         </div>
 
         <p style="margin:0 0 8px 0;font-size:13px;color:#6b7280;text-align:center;">
-          Te recomendamos cambiar tu contraseña después de iniciar sesión.
+          Comparte tu código con restaurantes para comenzar a generar comisiones.
         </p>
 
         <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;" />
