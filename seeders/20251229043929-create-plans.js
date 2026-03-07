@@ -25,16 +25,16 @@ module.exports = {
         created_at: now,
         updated_at: now,
       },
-      {
-        name: 'Test 1 Día',
-        price: 150000, 
-        currency: 'COP',
-        interval: 'day',
-        duration_days: 1,
-        is_active: true,
-        created_at: now,
-        updated_at: now,
-      },
+      // {
+      //   name: 'Test 1 Día',
+      //   price: 150000, 
+      //   currency: 'COP',
+      //   interval: 'day',
+      //   duration_days: 1,
+      //   is_active: true,
+      //   created_at: now,
+      //   updated_at: now,
+      // },
     ];
 
     for (const plan of plans) {
