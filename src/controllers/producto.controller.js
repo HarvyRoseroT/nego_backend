@@ -54,8 +54,6 @@ exports.getProductosByEstablecimiento = async (req, res) => {
   }
 };
 
-
-
 exports.getProductosBySeccion = async (req, res) => {
   try {
     const { seccionId } = req.params;

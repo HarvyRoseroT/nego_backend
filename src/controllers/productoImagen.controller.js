@@ -21,7 +21,22 @@ exports.subirImagenProducto = async (req, res) => {
       .webp({ quality: 80 })
       .toBuffer();
 
-    const key = `est/${producto.establecimiento_id}/prod/${producto.id}.webp`;
+    // borrar imagen anterior
+    if (producto.imagen_url) {
+      const oldKey = producto.imagen_url.replace(
+        `${process.env.CDN_BASE_URL}/`,
+        ""
+      );
+
+      await s3.send(
+        new DeleteObjectCommand({
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: oldKey
+        })
+      );
+    }
+
+    const key = `est/${producto.establecimiento_id}/prod/${producto.id}_${Date.now()}.webp`;
 
     await s3.send(
       new PutObjectCommand({
@@ -46,7 +61,6 @@ exports.subirImagenProducto = async (req, res) => {
     res.status(500).json({ message: "Error subiendo imagen" });
   }
 };
-
 exports.borrarImagenProducto = async (req, res) => {
   try {
     const productoId = req.params.id;
