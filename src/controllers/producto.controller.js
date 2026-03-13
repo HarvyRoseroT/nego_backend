@@ -2,7 +2,19 @@ const { Producto, Seccion, Carta } = require("../models");
 
 exports.createProducto = async (req, res) => {
   try {
-    const { nombre, descripcion, precio, seccion_id, activo } = req.body;
+    const {
+      nombre,
+      descripcion,
+      precio,
+      seccion_id,
+      activo,
+      marca,
+      talla,
+      color,
+      sku,
+      stock,
+      tipo_producto
+    } = req.body;
 
     if (!nombre || !seccion_id) {
       return res.status(400).json({ message: "Datos obligatorios faltantes" });
@@ -26,7 +38,13 @@ exports.createProducto = async (req, res) => {
       establecimiento_id: carta.establecimiento_id,
       activo: activo ?? true,
       orden: 0,
-      imagen_url: null
+      imagen_url: null,
+      marca: marca ?? null,
+      talla: talla ?? null,
+      color: color ?? null,
+      sku: sku ?? null,
+      stock: stock ?? null,
+      tipo_producto: tipo_producto ?? "food"
     });
 
     return res.status(201).json(producto);
@@ -102,7 +120,13 @@ exports.updateProducto = async (req, res) => {
       nombre: req.body.nombre ?? producto.nombre,
       descripcion: req.body.descripcion ?? producto.descripcion,
       precio: req.body.precio ?? producto.precio,
-      activo: req.body.activo ?? producto.activo
+      activo: req.body.activo ?? producto.activo,
+      marca: req.body.marca ?? producto.marca,
+      talla: req.body.talla ?? producto.talla,
+      color: req.body.color ?? producto.color,
+      sku: req.body.sku ?? producto.sku,
+      stock: req.body.stock ?? producto.stock,
+      tipo_producto: req.body.tipo_producto ?? producto.tipo_producto
     });
 
     return res.json(producto);

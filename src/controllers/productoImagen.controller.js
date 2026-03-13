@@ -17,11 +17,10 @@ exports.subirImagenProducto = async (req, res) => {
     }
 
     const buffer = await sharp(req.file.buffer)
-      .resize(800, 800, { fit: "inside" })
+      .resize(1200, 1200, { fit: "inside" })
       .webp({ quality: 80 })
       .toBuffer();
 
-    // borrar imagen anterior
     if (producto.imagen_url) {
       const oldKey = producto.imagen_url.replace(
         `${process.env.CDN_BASE_URL}/`,
@@ -61,6 +60,7 @@ exports.subirImagenProducto = async (req, res) => {
     res.status(500).json({ message: "Error subiendo imagen" });
   }
 };
+
 exports.borrarImagenProducto = async (req, res) => {
   try {
     const productoId = req.params.id;

@@ -74,6 +74,18 @@ const Establecimiento = sequelize.define(
     domicilio_activo: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
+    },
+
+    tipo_establecimiento: {
+      type: DataTypes.ENUM(
+        "restaurant",
+        "cafe",
+        "dark_kitchen",
+        "bar",
+        "clothing_store"
+      ),
+      allowNull: false,
+      defaultValue: "restaurant"
     }
   },
   {

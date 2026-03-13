@@ -9,22 +9,27 @@ const Producto = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
+
     nombre: {
       type: DataTypes.STRING,
       allowNull: false,
     },
+
     descripcion: {
       type: DataTypes.TEXT,
     },
+
     precio: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       defaultValue: 0,
     },
+
     orden: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
+
     activo: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
@@ -35,10 +40,36 @@ const Producto = sequelize.define(
       allowNull: true,
     },
 
+    marca: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    talla: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    color: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    sku: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    stock: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+
     seccion_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+
     establecimiento_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
