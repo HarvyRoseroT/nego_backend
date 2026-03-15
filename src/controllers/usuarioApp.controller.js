@@ -177,7 +177,9 @@ exports.getCartaDetalle = async (req, res) => {
                 "precio",
                 "descripcion",
                 "imagen_url",
-                "orden"
+                "orden",
+                "marca",
+                "talla"
               ]
             }
           ]
