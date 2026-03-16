@@ -18,6 +18,7 @@ const partnerPanelRoutes = require("./routes/partner.panel.routes");
 const usuarioAppRoutes = require("./routes/usuarioApp.routes");
 const analyticsRoutes = require("./routes/analytics.routes");
 const deepLinkRoutes = require("./routes/deeplink.routes");
+const aiRoutes = require("./routes/aiRoutes.routes");
 
 const wompiWebhook = require("./routes/webhook.routes");
 
@@ -65,6 +66,7 @@ app.use("/api/billing", billingRoutes);
 app.use("/app", usuarioAppRoutes);
 app.use("/app/analytics", analyticsRoutes);
 app.use("/", deepLinkRoutes);
+app.use("/app/api/ai", aiRoutes);
 
 app.use("/api/partner", partnerRoutes);
 app.use("/api/partner/panel", partnerPanelRoutes);
