@@ -1,4 +1,19 @@
+const path = require("path");
 const multer = require("multer");
+
+const allowedMimeTypes = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/octet-stream"
+]);
+
+const allowedExtensions = new Set([
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp"
+]);
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -8,14 +23,14 @@ const upload = multer({
   },
 
   fileFilter: (req, file, cb) => {
-    const allowed = [
-      "image/jpeg",
-      "image/png",
-      "image/webp"
-    ];
+    const extension = path.extname(file.originalname || "").toLowerCase();
+    const hasAllowedMimeType = allowedMimeTypes.has(file.mimetype);
+    const hasAllowedExtension = allowedExtensions.has(extension);
 
-    if (!allowed.includes(file.mimetype)) {
-      return cb(new Error("Formato de imagen no permitido"));
+    if (!hasAllowedMimeType || !hasAllowedExtension) {
+      const error = new Error("Formato de imagen no permitido");
+      error.statusCode = 400;
+      return cb(error);
     }
 
     cb(null, true);

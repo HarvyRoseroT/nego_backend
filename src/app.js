@@ -71,4 +71,20 @@ app.use("/app/api/ai", aiRoutes);
 app.use("/api/partner", partnerRoutes);
 app.use("/api/partner/panel", partnerPanelRoutes);
 
+app.use((err, req, res, next) => {
+  if (err instanceof Error && err.message === "Formato de imagen no permitido") {
+    return res.status(err.statusCode || 400).json({
+      message: err.message
+    });
+  }
+
+  if (err?.name === "MulterError") {
+    return res.status(400).json({
+      message: err.message
+    });
+  }
+
+  return next(err);
+});
+
 module.exports = app;
