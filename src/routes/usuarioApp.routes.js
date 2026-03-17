@@ -1,8 +1,10 @@
 const express = require("express");
 const router = express.Router();
+const upload = require("../middlewares/upload");
 
 const {
   initUsuarioApp,
+  subirImagenUsuarioApp,
   getEstablecimientosCercanos,
   getDetalleEstablecimiento,
   getDetalleEstablecimientoBySlug,
@@ -11,6 +13,7 @@ const {
 } = require("../controllers/usuarioApp.controller");
 
 router.post("/usuarios/init", initUsuarioApp);
+router.post("/usuarios/:id/imagen", upload.single("image"), subirImagenUsuarioApp);
 
 router.get("/establecimientos/cercanos", getEstablecimientosCercanos);
 router.get(

@@ -53,6 +53,10 @@ const UsuarioApp = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true
     },
+    imagen_url: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true

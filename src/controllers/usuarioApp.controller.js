@@ -5,6 +5,9 @@ const {
   Seccion,
   Producto
 } = require("../models");
+const sharp = require("sharp");
+const { PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
+const s3 = require("../config/s3");
 
 const haversineDistance = require("../utils/haversine");
 
@@ -42,6 +45,65 @@ exports.initUsuarioApp = async (req, res) => {
   } catch (error) {
     console.error("initUsuarioApp:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.subirImagenUsuarioApp = async (req, res) => {
+  try {
+    const usuarioId = req.params.id;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No se envio imagen" });
+    }
+
+    const usuario = await UsuarioApp.findByPk(usuarioId);
+
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    const buffer = await sharp(req.file.buffer)
+      .resize(1024, 1024, { fit: "inside" })
+      .webp({ quality: 80 })
+      .toBuffer();
+
+    if (usuario.imagen_url) {
+      const oldKey = usuario.imagen_url.replace(
+        `${process.env.CDN_BASE_URL}/`,
+        ""
+      );
+
+      await s3.send(
+        new DeleteObjectCommand({
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: oldKey
+        })
+      );
+    }
+
+    const key = `app-users/${usuario.id}/profile-${Date.now()}.webp`;
+
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: key,
+        Body: buffer,
+        ContentType: "image/webp",
+        CacheControl: "public, max-age=31536000, immutable"
+      })
+    );
+
+    const imagen_url = `${process.env.CDN_BASE_URL}/${key}`;
+
+    await usuario.update({ imagen_url });
+
+    res.json({
+      success: true,
+      imagen_url
+    });
+  } catch (error) {
+    console.error("subirImagenUsuarioApp:", error);
+    res.status(500).json({ message: "Error subiendo imagen" });
   }
 };
 
