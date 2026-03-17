@@ -16,6 +16,7 @@ const PasswordResetToken = require("./PasswordResetToken");
 const PartnerProfile = require("./PartnerProfile");
 const Referral = require("./Referral");
 const Commission = require("./Commission");
+const AiSetting = require("./AiSetting");
 
 User.hasMany(Establecimiento, {
   foreignKey: "user_id",
@@ -210,6 +211,7 @@ module.exports = {
   AnalyticsEvent,
   EmailVerificationToken,
   PasswordResetToken,
+  AiSetting,
 
   PartnerProfile,
   Referral,

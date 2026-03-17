@@ -1,4 +1,3 @@
-
 const { generateTryOn } = require("../services/falService");
 
 const tryOn = async (req, res) => {
@@ -20,6 +19,12 @@ const tryOn = async (req, res) => {
 
   } catch (error) {
     console.error("TryOn error:", error.body || error);
+
+    if (error.statusCode === 503) {
+      return res.status(503).json({
+        error: "AI generation service is currently disabled"
+      });
+    }
 
     res.status(500).json({
         error: "AI generation failed"
