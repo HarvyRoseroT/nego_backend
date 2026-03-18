@@ -28,6 +28,9 @@ const trackEvent = async (req, res) => {
         event_type,
         establecimiento_id,
         device_id,
+        carta_id: carta_id || null,
+        seccion_id: seccion_id || null,
+        producto_id: producto_id || null,
       },
       order: [["created_at", "DESC"]],
     });

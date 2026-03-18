@@ -22,4 +22,14 @@ router.get(
   controller.getCartasTop
 );
 
+router.get(
+  "/establecimiento/:id/productos-top",
+  controller.getProductosTop
+);
+
+router.get(
+  "/establecimiento/:id/productos-domicilio-top",
+  controller.getProductosDomicilioTop
+);
+
 module.exports = router;

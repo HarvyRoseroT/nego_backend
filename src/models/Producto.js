@@ -65,6 +65,12 @@ const Producto = sequelize.define(
       allowNull: true,
     },
 
+    tipo_producto: {
+      type: DataTypes.ENUM("food", "clothing"),
+      allowNull: false,
+      defaultValue: "food",
+    },
+
     seccion_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
