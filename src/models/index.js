@@ -17,6 +17,8 @@ const PartnerProfile = require("./PartnerProfile");
 const Referral = require("./Referral");
 const Commission = require("./Commission");
 const AiSetting = require("./AiSetting");
+const PlanoEstablecimiento = require("./PlanoEstablecimiento");
+const PlanoElemento = require("./PlanoElemento");
 
 User.hasMany(Establecimiento, {
   foreignKey: "user_id",
@@ -24,6 +26,26 @@ User.hasMany(Establecimiento, {
 });
 Establecimiento.belongsTo(User, {
   foreignKey: "user_id",
+});
+
+Establecimiento.hasOne(PlanoEstablecimiento, {
+  foreignKey: "establecimiento_id",
+  as: "plano",
+  onDelete: "CASCADE",
+});
+PlanoEstablecimiento.belongsTo(Establecimiento, {
+  foreignKey: "establecimiento_id",
+  as: "establecimiento",
+});
+
+PlanoEstablecimiento.hasMany(PlanoElemento, {
+  foreignKey: "plano_id",
+  as: "elementos",
+  onDelete: "CASCADE",
+});
+PlanoElemento.belongsTo(PlanoEstablecimiento, {
+  foreignKey: "plano_id",
+  as: "plano",
 });
 
 Establecimiento.hasMany(Carta, {
@@ -212,6 +234,8 @@ module.exports = {
   EmailVerificationToken,
   PasswordResetToken,
   AiSetting,
+  PlanoEstablecimiento,
+  PlanoElemento,
 
   PartnerProfile,
   Referral,

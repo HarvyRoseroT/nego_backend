@@ -19,6 +19,7 @@ const usuarioAppRoutes = require("./routes/usuarioApp.routes");
 const analyticsRoutes = require("./routes/analytics.routes");
 const deepLinkRoutes = require("./routes/deeplink.routes");
 const aiRoutes = require("./routes/aiRoutes.routes");
+const planoEstablecimientoRoutes = require("./routes/planoEstablecimiento.routes");
 
 const wompiWebhook = require("./routes/webhook.routes");
 
@@ -60,6 +61,7 @@ app.use("/public", publicRoutes);
 app.use("/api/cartas", cartaRoutes);
 app.use("/api/secciones", seccionRoutes);
 app.use("/api/productos", productoRoutes);
+app.use("/api/planos-establecimiento", planoEstablecimientoRoutes);
 app.use("/planes", planRoutes);
 app.use("/dashboard/analytics", analyticsStatsRoutes);
 app.use("/api/billing", billingRoutes);
