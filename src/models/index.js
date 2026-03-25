@@ -19,6 +19,8 @@ const Commission = require("./Commission");
 const AiSetting = require("./AiSetting");
 const PlanoEstablecimiento = require("./PlanoEstablecimiento");
 const PlanoElemento = require("./PlanoElemento");
+const PedidoMesa = require("./PedidoMesa");
+const PedidoMesaItem = require("./PedidoMesaItem");
 
 User.hasMany(Establecimiento, {
   foreignKey: "user_id",
@@ -28,9 +30,9 @@ Establecimiento.belongsTo(User, {
   foreignKey: "user_id",
 });
 
-Establecimiento.hasOne(PlanoEstablecimiento, {
+Establecimiento.hasMany(PlanoEstablecimiento, {
   foreignKey: "establecimiento_id",
-  as: "plano",
+  as: "planos",
   onDelete: "CASCADE",
 });
 PlanoEstablecimiento.belongsTo(Establecimiento, {
@@ -46,6 +48,65 @@ PlanoEstablecimiento.hasMany(PlanoElemento, {
 PlanoElemento.belongsTo(PlanoEstablecimiento, {
   foreignKey: "plano_id",
   as: "plano",
+});
+
+Establecimiento.hasMany(PedidoMesa, {
+  foreignKey: "establecimiento_id",
+  as: "pedidosMesa",
+  onDelete: "CASCADE"
+});
+PedidoMesa.belongsTo(Establecimiento, {
+  foreignKey: "establecimiento_id",
+  as: "establecimiento"
+});
+
+PlanoEstablecimiento.hasMany(PedidoMesa, {
+  foreignKey: "plano_id",
+  as: "pedidosMesa",
+  onDelete: "CASCADE"
+});
+PedidoMesa.belongsTo(PlanoEstablecimiento, {
+  foreignKey: "plano_id",
+  as: "plano"
+});
+
+PlanoElemento.hasMany(PedidoMesa, {
+  foreignKey: "mesa_id",
+  as: "pedidosMesa",
+  onDelete: "CASCADE"
+});
+PedidoMesa.belongsTo(PlanoElemento, {
+  foreignKey: "mesa_id",
+  as: "mesa"
+});
+
+UsuarioApp.hasMany(PedidoMesa, {
+  foreignKey: "usuario_app_id",
+  as: "pedidosMesa",
+  onDelete: "SET NULL"
+});
+PedidoMesa.belongsTo(UsuarioApp, {
+  foreignKey: "usuario_app_id",
+  as: "usuarioApp"
+});
+
+PedidoMesa.hasMany(PedidoMesaItem, {
+  foreignKey: "pedido_mesa_id",
+  as: "items",
+  onDelete: "CASCADE"
+});
+PedidoMesaItem.belongsTo(PedidoMesa, {
+  foreignKey: "pedido_mesa_id",
+  as: "pedido"
+});
+
+Producto.hasMany(PedidoMesaItem, {
+  foreignKey: "producto_id",
+  as: "pedidoItems"
+});
+PedidoMesaItem.belongsTo(Producto, {
+  foreignKey: "producto_id",
+  as: "producto"
 });
 
 Establecimiento.hasMany(Carta, {
@@ -236,6 +297,8 @@ module.exports = {
   AiSetting,
   PlanoEstablecimiento,
   PlanoElemento,
+  PedidoMesa,
+  PedidoMesaItem,
 
   PartnerProfile,
   Referral,

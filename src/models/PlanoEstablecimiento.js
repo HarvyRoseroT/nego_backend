@@ -11,8 +11,7 @@ const PlanoEstablecimiento = sequelize.define(
     },
     establecimiento_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
-      unique: true
+      allowNull: false
     },
     nombre: {
       type: DataTypes.STRING,

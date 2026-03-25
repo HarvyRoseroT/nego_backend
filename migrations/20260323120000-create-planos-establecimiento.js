@@ -12,7 +12,6 @@ module.exports = {
       establecimiento_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
-        unique: true,
         references: {
           model: 'establecimientos',
           key: 'id'
@@ -102,6 +101,7 @@ module.exports = {
       }
     });
 
+    await queryInterface.addIndex('planos_establecimiento', ['establecimiento_id']);
     await queryInterface.addIndex('plano_elementos', ['plano_id']);
     await queryInterface.addIndex('plano_elementos', ['tipo']);
   },
