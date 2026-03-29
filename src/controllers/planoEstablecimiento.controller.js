@@ -38,16 +38,6 @@ const getOwnedPlano = async (planoId, userId) =>
     order: [[{ model: PlanoElemento, as: "elementos" }, "id", "ASC"]]
   });
 
-const getOwnedPlanosByEstablecimiento = (establecimientoId) =>
-  PlanoEstablecimiento.findAll({
-    where: { establecimiento_id: establecimientoId },
-    include: [{ model: PlanoElemento, as: "elementos" }],
-    order: [
-      ["id", "ASC"],
-      [{ model: PlanoElemento, as: "elementos" }, "id", "ASC"]
-    ]
-  });
-
 const validatePlanoPayload = ({ ancho, alto }) => {
   if (!isPositiveNumber(ancho) || !isPositiveNumber(alto)) {
     return "Las dimensiones del plano deben ser numeros positivos";
@@ -118,6 +108,16 @@ exports.create = async (req, res) => {
       return res.status(400).json({ message: validationError });
     }
 
+    const existingPlano = await PlanoEstablecimiento.findOne({
+      where: { establecimiento_id }
+    });
+
+    if (existingPlano) {
+      return res.status(409).json({
+        message: "El establecimiento ya tiene un plano creado"
+      });
+    }
+
     const plano = await PlanoEstablecimiento.create({
       establecimiento_id,
       nombre: nombre || "Plano principal",
@@ -149,9 +149,17 @@ exports.getByEstablecimiento = async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    const planos = await getOwnedPlanosByEstablecimiento(establecimientoId);
+    const plano = await PlanoEstablecimiento.findOne({
+      where: { establecimiento_id: establecimientoId },
+      include: [{ model: PlanoElemento, as: "elementos" }],
+      order: [[{ model: PlanoElemento, as: "elementos" }, "id", "ASC"]]
+    });
 
-    res.json(planos);
+    if (!plano) {
+      return res.status(404).json({ message: "Plano not found" });
+    }
+
+    res.json(plano);
   } catch (error) {
     console.error("GET PLANO ERROR:", error);
     res.status(500).json({ message: "Get plano error" });
