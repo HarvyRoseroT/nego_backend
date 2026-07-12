@@ -1,9 +1,22 @@
 const axios = require("axios");
 const { Subscription, Plan, Transaction } = require("../../models");
 const crypto = require("crypto");
+const {
+  getBillingMode,
+  setFreeModeEnabled
+} = require("../../services/billingMode.service");
 
 async function getAcceptanceToken(req, res) {
   try {
+    const billingMode = await getBillingMode();
+
+    if (billingMode.free_mode_enabled) {
+      return res.status(409).json({
+        message: "Payments are disabled while free mode is enabled",
+        billing_mode: billingMode
+      });
+    }
+
     const response = await axios.get(
       `${process.env.WOMPI_BASE_URL}/merchants/${process.env.WOMPI_PUBLIC_KEY}`
     );
@@ -47,9 +60,17 @@ async function createCheckoutData(req, res) {
   try {
     const user = req.user;
     const { plan_id } = req.body;
+    const billingMode = await getBillingMode();
 
     if (!user || !user.id) {
       return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (billingMode.free_mode_enabled) {
+      return res.status(409).json({
+        message: "Payments are disabled while free mode is enabled",
+        billing_mode: billingMode
+      });
     }
 
     const plan = await Plan.findByPk(plan_id);
@@ -93,6 +114,41 @@ async function createCheckoutData(req, res) {
   }
 }
 
+async function getMode(req, res) {
+  try {
+    const billingMode = await getBillingMode();
+    return res.status(200).json(billingMode);
+  } catch (error) {
+    return res.status(500).json({ message: "Error fetching billing mode" });
+  }
+}
+
+async function updateMode(req, res) {
+  try {
+    const { free_mode_enabled } = req.body;
+
+    if (typeof free_mode_enabled !== "boolean") {
+      return res.status(400).json({
+        message: "free_mode_enabled debe ser boolean"
+      });
+    }
+
+    const billingMode = await setFreeModeEnabled(
+      free_mode_enabled,
+      req.user?.id || null
+    );
+
+    return res.status(200).json({
+      message: free_mode_enabled
+        ? "Modo gratuito activado correctamente"
+        : "Modo gratuito desactivado correctamente",
+      billing_mode: billingMode
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Error updating billing mode" });
+  }
+}
+
 
 async function getMyInvoices(req, res) {
   try {
@@ -125,5 +181,7 @@ module.exports = {
   getAcceptanceToken,
   getMySubscription,
   createCheckoutData,
-  getMyInvoices
+  getMyInvoices,
+  getMode,
+  updateMode
 };

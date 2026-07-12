@@ -1,6 +1,6 @@
 'use strict';
 
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 
 module.exports = {
   async up(queryInterface, Sequelize) {

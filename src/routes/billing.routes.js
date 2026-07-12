@@ -2,6 +2,20 @@ const express = require("express");
 const router = express.Router();
 const billingController = require("../controllers/billing/billing.controller");
 const authMiddleware = require("../middlewares/auth.middleware");
+const requireRole = require("../middlewares/role.middleware");
+
+router.get(
+  "/mode",
+  authMiddleware,
+  billingController.getMode
+);
+
+router.patch(
+  "/mode",
+  authMiddleware,
+  requireRole("superadmin"),
+  billingController.updateMode
+);
 
 router.get(
   "/subscription",

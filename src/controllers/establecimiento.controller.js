@@ -134,25 +134,6 @@ exports.getById = async (req, res) => {
   }
 };
 
-exports.getBySlugPublic = async (req, res) => {
-  try {
-    const establecimiento = await Establecimiento.findOne({
-      where: {
-        slug: req.params.slug,
-        activo: true
-      }
-    });
-
-    if (!establecimiento) {
-      return res.status(404).json({ message: "Not found" });
-    }
-
-    res.json(establecimiento);
-  } catch (error) {
-    res.status(500).json({ message: "Fetch error" });
-  }
-};
-
 exports.update = async (req, res) => {
   try {
     const establecimiento = await Establecimiento.findOne({

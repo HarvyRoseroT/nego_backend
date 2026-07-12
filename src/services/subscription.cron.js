@@ -3,9 +3,14 @@ const cron = require("node-cron");
 const { Op } = require("sequelize");
 const { Subscription, PaymentMethod, Transaction, User } = require("../models");
 const wompiService = require("../controllers/billing/wompi.service");
+const { isFreeModeEnabled } = require("./billingMode.service");
 
 cron.schedule("0 2 * * *", async () => {
   try {
+    if (await isFreeModeEnabled()) {
+      return;
+    }
+
     const now = new Date();
 
     const dueSubscriptions = await Subscription.findAll({

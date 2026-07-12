@@ -31,6 +31,7 @@ app.use(
       "https://panel.nego.ink",
       "http://localhost:3001",
       "https://open.nego.ink",
+      "http://localhost:3003",
     ],
     credentials: true,
   })

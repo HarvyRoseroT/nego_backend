@@ -17,6 +17,7 @@ const PartnerProfile = require("./PartnerProfile");
 const Referral = require("./Referral");
 const Commission = require("./Commission");
 const AiSetting = require("./AiSetting");
+const BillingSetting = require("./BillingSetting");
 const PlanoEstablecimiento = require("./PlanoEstablecimiento");
 const PlanoElemento = require("./PlanoElemento");
 
@@ -234,6 +235,7 @@ module.exports = {
   EmailVerificationToken,
   PasswordResetToken,
   AiSetting,
+  BillingSetting,
   PlanoEstablecimiento,
   PlanoElemento,
 

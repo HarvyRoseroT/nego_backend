@@ -23,6 +23,10 @@ const Producto = sequelize.define(
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       defaultValue: 0,
+      get() {
+        const rawValue = this.getDataValue("precio");
+        return rawValue === null ? null : Number(rawValue);
+      },
     },
 
     orden: {

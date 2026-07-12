@@ -1,11 +1,21 @@
 const { Subscription, Establecimiento, User } = require("../models");
 const { sendPlanExpiredEmail } = require("../services/emailService");
+const { isFreeModeEnabled } = require("../services/billingMode.service");
 
 const GRACE_PERIOD_DAYS = 0;
 
 module.exports = async (req, res, next) => {
   try {
     const userId = req.user.id;
+
+    if (await isFreeModeEnabled()) {
+      await enableEstablecimientos(userId);
+      req.billingMode = {
+        free_mode_enabled: true,
+        payments_enabled: false
+      };
+      return next();
+    }
 
     const subscription = await Subscription.findOne({
       where: { user_id: userId },

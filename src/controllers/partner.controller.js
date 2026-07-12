@@ -1,5 +1,5 @@
 const sequelize = require("../config/database");
-const { hashPassword } = require("../utils/hash");
+const { hashPassword } = require("../utils/password");
 const { generateReferralCodeFromName } = require("../utils/referralCode");
 const { Commission, Referral, PartnerProfile, User } = require("../models");
 const { Op } = require("sequelize");

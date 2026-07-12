@@ -19,6 +19,29 @@ async function getMerchant() {
   return response.data.data;
 }
 
+async function createTransaction({
+  amount,
+  currency,
+  customer_email,
+  payment_source_id,
+  reference
+}) {
+  const response = await axios.post(
+    `${WOMPI_BASE_URL}/transactions`,
+    {
+      amount_in_cents: amount,
+      currency,
+      customer_email,
+      payment_source_id,
+      reference
+    },
+    { headers }
+  );
+
+  return response.data.data;
+}
+
 module.exports = {
-  getMerchant
+  getMerchant,
+  createTransaction
 };
