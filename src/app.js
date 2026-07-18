@@ -23,6 +23,8 @@ const planoEstablecimientoRoutes = require("./routes/planoEstablecimiento.routes
 
 const wompiWebhook = require("./routes/webhook.routes");
 
+const tradingAlertsRouter = require("./modules/trading-alerts");
+
 const app = express();
 
 app.use(
@@ -73,6 +75,8 @@ app.use("/app/api/ai", aiRoutes);
 
 app.use("/api/partner", partnerRoutes);
 app.use("/api/partner/panel", partnerPanelRoutes);
+
+app.use("/api/trading-alerts", tradingAlertsRouter);
 
 app.use((err, req, res, next) => {
   if (err instanceof Error && err.message === "Formato de imagen no permitido") {
