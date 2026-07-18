@@ -1,56 +1,62 @@
 const axios = require("axios");
 const { MARKET_DATA_BASE_URL } = require("../constants");
 
-// Bybit usa códigos de intervalo propios (minutos como número, o D/W/M).
-const INTERVAL_CODE = {
-  "1m": "1", "3m": "3", "5m": "5", "15m": "15", "30m": "30",
-  "1h": "60", "2h": "120", "4h": "240", "6h": "360", "12h": "720",
-  "1d": "D", "1w": "W", "1M": "M"
+// Kraken usa el intervalo en minutos como entero.
+const INTERVAL_MINUTES = {
+  "1m": 1, "5m": 5, "15m": 15, "30m": 30,
+  "1h": 60, "4h": 240, "1d": 1440, "1w": 10080
 };
 
-const INTERVAL_MS = {
-  "1m": 60_000, "3m": 180_000, "5m": 300_000, "15m": 900_000, "30m": 1_800_000,
-  "1h": 3_600_000, "2h": 7_200_000, "4h": 14_400_000, "6h": 21_600_000, "12h": 43_200_000,
-  "1d": 86_400_000, "1w": 604_800_000
-};
+const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
-function mapKline([openTime, open, high, low, close, volume], intervalMs) {
-  const openTimeMs = Number(openTime);
-  return {
-    openTime: openTimeMs,
-    open: Number(open),
-    high: Number(high),
-    low: Number(low),
-    close: Number(close),
-    volume: Number(volume),
-    closeTime: openTimeMs + intervalMs - 1
-  };
+// Kraken usa su propia nomenclatura de pares (ISO 4217-ish, BTC = XBT) en vez del
+// formato "BTCUSDT" estilo Binance que usa el resto del módulo.
+function toKrakenPair(pair) {
+  const base = pair.replace(/USDT?$/, "");
+  const krakenBase = base === "BTC" ? "XBT" : base;
+  return `${krakenBase}USD`;
 }
 
 async function getKlines(pair, timeframe, limit) {
-  const interval = INTERVAL_CODE[timeframe];
-  const intervalMs = INTERVAL_MS[timeframe];
-  if (!interval || !intervalMs) {
+  const intervalMinutes = INTERVAL_MINUTES[timeframe];
+  if (!intervalMinutes) {
     throw new Error(`timeframe no soportado: ${timeframe}`);
   }
+  const intervalMs = intervalMinutes * 60_000;
 
-  const response = await axios.get(`${MARKET_DATA_BASE_URL}/v5/market/kline`, {
+  const response = await axios.get(`${MARKET_DATA_BASE_URL}/0/public/OHLC`, {
     params: {
-      category: "linear", // perpetuos USDT, equivalente a Binance Futures
-      symbol: pair,
-      interval,
-      limit
+      pair: toKrakenPair(pair),
+      interval: intervalMinutes
     },
-    timeout: 10000
+    timeout: 10000,
+    headers: {
+      "User-Agent": USER_AGENT,
+      "Accept": "application/json"
+    }
   });
 
-  if (response.data?.retCode !== 0) {
-    throw new Error(`Bybit error: ${response.data?.retMsg || "respuesta inválida"}`);
+  if (response.data?.error?.length) {
+    throw new Error(`Kraken error: ${response.data.error.join(", ")}`);
   }
 
-  const list = response.data?.result?.list || [];
-  // Bybit devuelve las velas en orden descendente (más reciente primero).
-  return list.map((raw) => mapKline(raw, intervalMs)).sort((a, b) => a.openTime - b.openTime);
+  const resultKey = Object.keys(response.data?.result || {}).find((k) => k !== "last");
+  const rows = resultKey ? response.data.result[resultKey] : [];
+
+  const candles = rows.map(([time, open, high, low, close, , volume]) => {
+    const openTimeMs = Number(time) * 1000;
+    return {
+      openTime: openTimeMs,
+      open: Number(open),
+      high: Number(high),
+      low: Number(low),
+      close: Number(close),
+      volume: Number(volume),
+      closeTime: openTimeMs + intervalMs - 1
+    };
+  });
+
+  return limit ? candles.slice(-limit) : candles;
 }
 
 /**

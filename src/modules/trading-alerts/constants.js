@@ -8,20 +8,16 @@ const DEFAULT_TIMEFRAMES = (process.env.TRADING_DEFAULT_TIMEFRAMES || "4h,1h,15m
   .map((t) => t.trim())
   .filter(Boolean);
 
-// Limitado a los intervalos que el proveedor de datos (Bybit) soporta nativamente.
-const VALID_INTERVALS = [
-  "1m", "3m", "5m", "15m", "30m",
-  "1h", "2h", "4h", "6h", "12h",
-  "1d", "1w", "1M"
-];
+// Limitado a los intervalos que el proveedor de datos (Kraken) soporta nativamente.
+const VALID_INTERVALS = ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"];
 
 const DEFAULT_SWING_LOOKBACK = Number(process.env.TRADING_SWING_LOOKBACK || 5);
 
 const KLINES_LIMIT = Number(process.env.TRADING_KLINES_LIMIT || 200);
 
-// Binance bloquea (HTTP 451) las IPs de datacenter de la mayoría de los hosts en la nube,
-// incluido Railway. Bybit sirve datos de mercado públicos sin ese bloqueo.
-const MARKET_DATA_BASE_URL = process.env.TRADING_MARKET_DATA_BASE_URL || "https://api.bybit.com";
+// Binance (451) y Bybit (403) bloquean las IPs de Railway por regulación de EE. UU.
+// Kraken es un exchange con sede en EE. UU. que sí sirve tráfico estadounidense.
+const MARKET_DATA_BASE_URL = process.env.TRADING_MARKET_DATA_BASE_URL || "https://api.kraken.com";
 
 const FIBONACCI_LEVELS = [0.236, 0.382, 0.5, 0.618, 0.786];
 

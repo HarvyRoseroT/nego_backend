@@ -18,8 +18,21 @@ async function getCandles(req, res) {
     });
   }
 
-  const candles = await fetchRecentCandles(pair, timeframe, limit);
-  return res.status(200).json({ pair, timeframe, candles });
+  try {
+    const candles = await fetchRecentCandles(pair, timeframe, limit);
+    return res.status(200).json({ pair, timeframe, candles });
+  } catch (error) {
+    const upstreamStatus = error.response?.status;
+    console.error(
+      "trading-alerts candles fetch error:",
+      upstreamStatus,
+      error.response?.data || error.message
+    );
+    return res.status(502).json({
+      message: "No se pudieron obtener las velas del proveedor de datos de mercado",
+      upstreamStatus: upstreamStatus || null
+    });
+  }
 }
 
 module.exports = { getCandles };
