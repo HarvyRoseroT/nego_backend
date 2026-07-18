@@ -1,4 +1,4 @@
-const { fetchKlines } = require("./binance.service");
+const { fetchKlines } = require("./marketData.service");
 const { analyzeSwingStructure } = require("./indicators/swingStructure");
 const { analyzeFibonacci } = require("./indicators/fibonacci");
 const { analyzeMACD } = require("./indicators/macd");

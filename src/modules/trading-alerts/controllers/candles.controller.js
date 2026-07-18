@@ -1,5 +1,5 @@
-const { fetchRecentCandles } = require("../services/binance.service");
-const { VALID_BINANCE_INTERVALS } = require("../constants");
+const { fetchRecentCandles } = require("../services/marketData.service");
+const { VALID_INTERVALS } = require("../constants");
 
 const MAX_LIMIT = 500;
 
@@ -12,9 +12,9 @@ async function getCandles(req, res) {
     return res.status(400).json({ message: "pair inválido" });
   }
 
-  if (!VALID_BINANCE_INTERVALS.includes(timeframe)) {
+  if (!VALID_INTERVALS.includes(timeframe)) {
     return res.status(400).json({
-      message: `timeframe inválido. Valores permitidos: ${VALID_BINANCE_INTERVALS.join(", ")}`
+      message: `timeframe inválido. Valores permitidos: ${VALID_INTERVALS.join(", ")}`
     });
   }
 

@@ -8,17 +8,20 @@ const DEFAULT_TIMEFRAMES = (process.env.TRADING_DEFAULT_TIMEFRAMES || "4h,1h,15m
   .map((t) => t.trim())
   .filter(Boolean);
 
-const VALID_BINANCE_INTERVALS = [
+// Limitado a los intervalos que el proveedor de datos (Bybit) soporta nativamente.
+const VALID_INTERVALS = [
   "1m", "3m", "5m", "15m", "30m",
-  "1h", "2h", "4h", "6h", "8h", "12h",
-  "1d", "3d", "1w", "1M"
+  "1h", "2h", "4h", "6h", "12h",
+  "1d", "1w", "1M"
 ];
 
 const DEFAULT_SWING_LOOKBACK = Number(process.env.TRADING_SWING_LOOKBACK || 5);
 
 const KLINES_LIMIT = Number(process.env.TRADING_KLINES_LIMIT || 200);
 
-const BINANCE_BASE_URL = process.env.TRADING_BINANCE_BASE_URL || "https://fapi.binance.com";
+// Binance bloquea (HTTP 451) las IPs de datacenter de la mayoría de los hosts en la nube,
+// incluido Railway. Bybit sirve datos de mercado públicos sin ese bloqueo.
+const MARKET_DATA_BASE_URL = process.env.TRADING_MARKET_DATA_BASE_URL || "https://api.bybit.com";
 
 const FIBONACCI_LEVELS = [0.236, 0.382, 0.5, 0.618, 0.786];
 
@@ -33,10 +36,10 @@ const DIRECTIONS = { BULLISH: "bullish", BEARISH: "bearish" };
 module.exports = {
   DEFAULT_PAIRS,
   DEFAULT_TIMEFRAMES,
-  VALID_BINANCE_INTERVALS,
+  VALID_INTERVALS,
   DEFAULT_SWING_LOOKBACK,
   KLINES_LIMIT,
-  BINANCE_BASE_URL,
+  MARKET_DATA_BASE_URL,
   FIBONACCI_LEVELS,
   GOLDEN_POCKET,
   NEAR_ZONE_MARGIN_PCT,

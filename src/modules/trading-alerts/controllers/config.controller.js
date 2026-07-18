@@ -1,5 +1,5 @@
 const TradingConfig = require("../models/TradingConfig");
-const { VALID_BINANCE_INTERVALS } = require("../constants");
+const { VALID_INTERVALS } = require("../constants");
 
 async function getConfig(req, res) {
   const configs = await TradingConfig.findAll({ order: [["pair", "ASC"], ["timeframe", "ASC"]] });
@@ -13,8 +13,8 @@ async function upsertConfig(req, res) {
     return res.status(400).json({ message: "pair y timeframe son requeridos" });
   }
 
-  if (!VALID_BINANCE_INTERVALS.includes(timeframe)) {
-    return res.status(400).json({ message: `timeframe inválido. Valores permitidos: ${VALID_BINANCE_INTERVALS.join(", ")}` });
+  if (!VALID_INTERVALS.includes(timeframe)) {
+    return res.status(400).json({ message: `timeframe inválido. Valores permitidos: ${VALID_INTERVALS.join(", ")}` });
   }
 
   const normalizedPair = String(pair).toUpperCase().trim();
