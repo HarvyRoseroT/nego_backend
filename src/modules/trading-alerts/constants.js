@@ -1,4 +1,4 @@
-const DEFAULT_PAIRS = (process.env.TRADING_DEFAULT_PAIRS || "BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT")
+const DEFAULT_PAIRS = (process.env.TRADING_DEFAULT_PAIRS || "BTCUSDT")
   .split(",")
   .map((p) => p.trim().toUpperCase())
   .filter(Boolean);

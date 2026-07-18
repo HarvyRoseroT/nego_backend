@@ -44,6 +44,11 @@ TradingAlertHistory.init(
       type: DataTypes.STRING,
       allowNull: false,
       unique: true
+    },
+    candles: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: []
     }
   },
   {

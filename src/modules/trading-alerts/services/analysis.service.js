@@ -114,7 +114,8 @@ async function runAnalysisForPair(pair, timeframe, swingLookback) {
     score,
     signals_detected: signalsDetected,
     price: currentPrice,
-    dedup_key: dedupKey
+    dedup_key: dedupKey,
+    candles
   });
 
   return { pair, timeframe, saved: true, direction, score, dedupKey, id: record.id };
