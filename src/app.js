@@ -14,6 +14,7 @@ const analyticsStatsRoutes = require("./routes/analytics.stats.routes");
 const billingRoutes = require("./routes/billing.routes");
 const partnerRoutes = require("./routes/partner.routes");
 const partnerPanelRoutes = require("./routes/partner.panel.routes");
+const superadminRoutes = require("./routes/superadmin.routes");
 
 const usuarioAppRoutes = require("./routes/usuarioApp.routes");
 const analyticsRoutes = require("./routes/analytics.routes");
@@ -74,6 +75,7 @@ app.use("/app/api/ai", aiRoutes);
 
 app.use("/api/partner", partnerRoutes);
 app.use("/api/partner/panel", partnerPanelRoutes);
+app.use("/api/superadmin", superadminRoutes);
 
 app.use((err, req, res, next) => {
   if (err instanceof Error && err.message === "Formato de imagen no permitido") {
