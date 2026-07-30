@@ -71,6 +71,11 @@ const Establecimiento = sequelize.define(
       defaultValue: true
     },
 
+    verificado: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
+
     domicilio_activo: {
       type: DataTypes.BOOLEAN,
       defaultValue: true

@@ -109,6 +109,7 @@ const formatEstablecimiento = (establecimiento) => {
     logo_url: plain.logo_url,
     imagen_ubicacion_url: plain.imagen_ubicacion_url,
     activo: plain.activo,
+    verificado: plain.verificado,
     domicilio_activo: plain.domicilio_activo,
     tipo_establecimiento: plain.tipo_establecimiento,
     createdAt: plain.createdAt,
@@ -195,6 +196,37 @@ exports.getEstablecimientoById = async (req, res) => {
     console.error("SUPERADMIN GET ESTABLECIMIENTO ERROR:", error);
     return res.status(500).json({
       message: "Error obteniendo establecimiento",
+    });
+  }
+};
+
+exports.updateEstablecimientoVerificado = async (req, res) => {
+  try {
+    if (typeof req.body.verificado !== "boolean") {
+      return res.status(400).json({
+        message: "El campo verificado debe ser booleano",
+      });
+    }
+
+    const establecimiento = await Establecimiento.findByPk(req.params.id);
+
+    if (!establecimiento) {
+      return res.status(404).json({ message: "Establecimiento no encontrado" });
+    }
+
+    await establecimiento.update({
+      verificado: req.body.verificado,
+    });
+
+    const updated = await Establecimiento.findByPk(req.params.id, {
+      include: [ownerInclude],
+    });
+
+    return res.json(formatEstablecimiento(updated));
+  } catch (error) {
+    console.error("SUPERADMIN UPDATE ESTABLECIMIENTO VERIFICADO ERROR:", error);
+    return res.status(500).json({
+      message: "Error actualizando verificacion del establecimiento",
     });
   }
 };
